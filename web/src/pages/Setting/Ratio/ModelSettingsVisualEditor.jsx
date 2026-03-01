@@ -274,7 +274,7 @@ export default function ModelSettingsVisualEditor(props) {
   };
 
   const calculateRatioFromTokenPrice = (tokenPrice) => {
-    return tokenPrice / 2;
+    return tokenPrice;
   };
 
   const calculateCompletionRatioFromPrices = (
@@ -382,7 +382,7 @@ export default function ModelSettingsVisualEditor(props) {
   };
 
   const calculateTokenPriceFromRatio = (ratio) => {
-    return ratio * 2;
+    return ratio;
   };
 
   const resetModalState = () => {
@@ -523,7 +523,7 @@ export default function ModelSettingsVisualEditor(props) {
             ) {
               // Calculate and set ratio from token price
               const tokenPrice = parseFloat(currentModel.tokenPrice);
-              valuesToSave.ratio = (tokenPrice / 2).toString();
+              valuesToSave.ratio = tokenPrice.toString();
 
               // Calculate and set completion ratio if both token prices are available
               if (

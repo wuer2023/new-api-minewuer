@@ -62,8 +62,9 @@ const ModelDetailSideSheet = ({
       width={isMobile ? '100%' : 600}
       closeIcon={
         <Button
-          className='semi-button-tertiary semi-button-size-small semi-button-borderless'
-          type='button'
+          theme='borderless'
+          type='tertiary'
+          size='small'
           icon={<IconClose />}
           onClick={onClose}
         />

@@ -647,40 +647,19 @@ export const calculateModelPrice = ({
   // 2. 根据计费类型计算价格
   if (record.quota_type === 0) {
     // 按量计费
-    const inputRatioPriceUSD = record.model_ratio * 2 * usedGroupRatio;
-    const completionRatioPriceUSD =
-      record.model_ratio * record.completion_ratio * 2 * usedGroupRatio;
+    const inputPrice = record.model_ratio * usedGroupRatio;
+    const completionPrice =
+      record.model_ratio * record.completion_ratio * usedGroupRatio;
 
     const unitDivisor = tokenUnit === 'K' ? 1000 : 1;
     const unitLabel = tokenUnit === 'K' ? 'K' : 'M';
 
-    const rawDisplayInput = displayPrice(inputRatioPriceUSD);
-    const rawDisplayCompletion = displayPrice(completionRatioPriceUSD);
+    const numInput = inputPrice / unitDivisor;
+    const numCompletion = completionPrice / unitDivisor;
 
-    const numInput =
-      parseFloat(rawDisplayInput.replace(/[^0-9.]/g, '')) / unitDivisor;
-    const numCompletion =
-      parseFloat(rawDisplayCompletion.replace(/[^0-9.]/g, '')) / unitDivisor;
-
-    let symbol = '$';
-    if (currency === 'CNY') {
-      symbol = '¥';
-    } else if (currency === 'CUSTOM') {
-      try {
-        const statusStr = localStorage.getItem('status');
-        if (statusStr) {
-          const s = JSON.parse(statusStr);
-          symbol = s?.custom_currency_symbol || '¤';
-        } else {
-          symbol = '¤';
-        }
-      } catch (e) {
-        symbol = '¤';
-      }
-    }
     return {
-      inputPrice: `${symbol}${numInput.toFixed(precision)}`,
-      completionPrice: `${symbol}${numCompletion.toFixed(precision)}`,
+      inputPrice: `¥${numInput.toFixed(precision)}`,
+      completionPrice: `¥${numCompletion.toFixed(precision)}`,
       unitLabel,
       isPerToken: true,
       usedGroup,
@@ -690,11 +669,10 @@ export const calculateModelPrice = ({
 
   if (record.quota_type === 1) {
     // 按次计费
-    const priceUSD = parseFloat(record.model_price) * usedGroupRatio;
-    const displayVal = displayPrice(priceUSD);
+    const price = parseFloat(record.model_price) * usedGroupRatio;
 
     return {
-      price: displayVal,
+      price: `¥${price.toFixed(precision)}`,
       isPerToken: false,
       usedGroup,
       usedGroupRatio,
