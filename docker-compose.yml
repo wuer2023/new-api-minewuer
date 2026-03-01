@@ -16,28 +16,31 @@ version: '3.4' # For compatibility with older Docker versions
 
 services:
   new-api:
-    image: calciumion/new-api:latest
+    image: minewuer/new-api-plus:latest
     container_name: new-api
     restart: always
-    command: --log-dir /app/logs
     ports:
       - "3000:3000"
     volumes:
       - ./data:/data
-      - ./logs:/app/logs
     environment:
       - SQL_DSN=postgresql://root:123456@postgres:5432/new-api # ⚠️ IMPORTANT: Change the password in production!
 #      - SQL_DSN=root:123456@tcp(mysql:3306)/new-api  # Point to the mysql service, uncomment if using MySQL
       - REDIS_CONN_STRING=redis://redis
       - TZ=Asia/Shanghai
-      - ERROR_LOG_ENABLED=true # 是否启用错误日志记录 (Whether to enable error log recording)
-      - BATCH_UPDATE_ENABLED=true  # 是否启用批量更新 (Whether to enable batch update)
-#      - STREAMING_TIMEOUT=300  # 流模式无响应超时时间，单位秒，默认120秒，如果出现空补全可以尝试改为更大值 （Streaming timeout in seconds, default is 120s. Increase if experiencing empty completions）
-#      - SESSION_SECRET=random_string  # 多机部署时设置，必须修改这个随机字符串！！ （multi-node deployment, set this to a random string!!!!!!!）
-#      - SYNC_FREQUENCY=60  # Uncomment if regular database syncing is needed
-#      - GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX  # Google Analytics 的测量 ID (Google Analytics Measurement ID)
-#      - UMAMI_WEBSITE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  # Umami 网站 ID (Umami Website ID)
-#      - UMAMI_SCRIPT_URL=https://analytics.umami.is/script.js  # Umami 脚本 URL，默认为官方地址 (Umami Script URL, defaults to official URL)
+      - ERROR_LOG_ENABLED=true
+      - BATCH_UPDATE_ENABLED=true
+      # ====== 模型健康检测配置 ======
+      - HEALTH_API_BASE=http://localhost:3000
+      - HEALTH_API_TOKEN=sk-your-token-here  # ⚠️ 替换为实际的测试 Token
+      - HEALTH_MODELS=gpt-4o,gpt-4o-mini,claude-3-5-sonnet-20241022,deepseek-chat,deepseek-reasoner
+      - HEALTH_INTERVAL=900  # 检测间隔（秒），900=15分钟
+#      - STREAMING_TIMEOUT=300
+#      - SESSION_SECRET=random_string
+#      - SYNC_FREQUENCY=60
+#      - GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
+#      - UMAMI_WEBSITE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+#      - UMAMI_SCRIPT_URL=https://analytics.umami.is/script.js
 
     depends_on:
       - redis
