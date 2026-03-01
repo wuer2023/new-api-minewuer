@@ -24,13 +24,15 @@ except ImportError:
 API_BASE_URL = os.getenv("HEALTH_API_BASE", "http://localhost:3000")
 API_TOKEN = os.getenv("HEALTH_API_TOKEN", "sk-your-token-here")
 
-MODELS = [
+_DEFAULT_MODELS = [
     "gpt-4o-mini",
     "gpt-4o",
     "claude-3-5-sonnet-20241022",
     "deepseek-chat",
     "deepseek-reasoner",
 ]
+_env_models = os.getenv("HEALTH_MODELS", "")
+MODELS = [m.strip() for m in _env_models.split(",") if m.strip()] if _env_models else _DEFAULT_MODELS
 
 OUTPUT_PATH = os.getenv(
     "HEALTH_OUTPUT_PATH",
