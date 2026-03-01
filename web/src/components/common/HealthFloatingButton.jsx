@@ -69,7 +69,7 @@ const HealthFloatingButton = () => {
     setModalVisible(true);
     setLoading(true);
     try {
-      const res = await fetch('/model_health.json');
+      const res = await fetch('/channel_health.json');
       if (res.ok) {
         const json = await res.json();
         setHealthData(json);
@@ -103,7 +103,7 @@ const HealthFloatingButton = () => {
             ? '0 6px 28px rgba(0,0,0,0.4), 0 0 20px rgba(52,211,153,0.15)'
             : fabStyle.boxShadow,
         }}
-        aria-label='Model Health'
+        aria-label='Channel Health'
       >
         <span style={ringStyle} />
         <span style={glowStyle} />

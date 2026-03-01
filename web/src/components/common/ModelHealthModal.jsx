@@ -31,8 +31,8 @@ const HealthBlock = ({ value }) => {
   );
 };
 
-const ModelRow = ({ model }) => {
-  const history = model.history ?? [];
+const ChannelRow = ({ channel }) => {
+  const history = channel.history ?? [];
   const padded = [...Array(15)].map((_, i) => history[i] ?? null);
 
   const availability = useMemo(() => {
@@ -55,7 +55,7 @@ const ModelRow = ({ model }) => {
     <div className='flex flex-col gap-1.5 px-4 py-3 rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 transition-colors'>
       <div className='flex items-center justify-between'>
         <span className='text-sm text-zinc-200 font-medium truncate max-w-[60%]'>
-          {model.name}
+          {channel.name}
         </span>
         <span className={`text-xs font-mono ${availColor}`}>
           {availability !== null ? `${availability}%` : '-'}
@@ -74,12 +74,12 @@ const ModelHealthModal = ({ visible, onClose, data, loading }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
-  const models = data?.models ?? [];
+  const channels = data?.channels ?? [];
 
   return (
     <Modal
       title={
-        <span className='text-zinc-100'>{t('模型健康状态')}</span>
+        <span className='text-zinc-100'>{t('渠道健康状态')}</span>
       }
       visible={visible}
       onCancel={onClose}
@@ -102,7 +102,7 @@ const ModelHealthModal = ({ visible, onClose, data, loading }) => {
         <div className='flex items-center justify-center py-16'>
           <Spin size='large' />
         </div>
-      ) : models.length === 0 ? (
+      ) : channels.length === 0 ? (
         <div className='py-12'>
           <Empty
             image={
@@ -139,8 +139,8 @@ const ModelHealthModal = ({ visible, onClose, data, loading }) => {
             </span>
           </div>
           <div className='flex flex-col gap-2'>
-            {models.map((m, idx) => (
-              <ModelRow key={m.name || idx} model={m} />
+            {channels.map((ch, idx) => (
+              <ChannelRow key={ch.id || idx} channel={ch} />
             ))}
           </div>
         </>

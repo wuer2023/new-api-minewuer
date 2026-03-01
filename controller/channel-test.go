@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -893,6 +895,172 @@ func AutomaticallyTestChannels() {
 					break
 				}
 			}
+		}
+	})
+}
+
+type channelHealthEntry struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Type         int    `json:"type"`
+	History      []int  `json:"history"`
+	Availability *int   `json:"availability"`
+}
+
+type channelHealthData struct {
+	UpdatedAt int64                `json:"updated_at"`
+	Channels  []channelHealthEntry `json:"channels"`
+}
+
+const maxHealthHistory = 15
+
+var (
+	channelHealthMu      sync.Mutex
+	channelHealthHistory = make(map[int][]int)
+)
+
+func loadChannelHealthHistory() {
+	exe, _ := os.Executable()
+	candidates := []string{
+		filepath.Join(filepath.Dir(exe), ".channel_health_history.json"),
+		filepath.Join(".", ".channel_health_history.json"),
+	}
+	for _, p := range candidates {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		var h map[int][]int
+		if json.Unmarshal(data, &h) == nil {
+			channelHealthHistory = h
+			return
+		}
+	}
+}
+
+func saveChannelHealthHistory() {
+	data, err := json.Marshal(channelHealthHistory)
+	if err != nil {
+		return
+	}
+	exe, _ := os.Executable()
+	p := filepath.Join(filepath.Dir(exe), ".channel_health_history.json")
+	_ = os.WriteFile(p, data, 0644)
+	_ = os.WriteFile(filepath.Join(".", ".channel_health_history.json"), data, 0644)
+}
+
+func writeChannelHealthJSON(channels []*model.Channel) {
+	channelHealthMu.Lock()
+	defer channelHealthMu.Unlock()
+
+	entries := make([]channelHealthEntry, 0, len(channels))
+	for _, ch := range channels {
+		h := channelHealthHistory[ch.Id]
+		entry := channelHealthEntry{
+			ID:      ch.Id,
+			Name:    ch.Name,
+			Type:    ch.Type,
+			History: h,
+		}
+		valid := lo.Filter(h, func(v int, _ int) bool { return v == 0 || v == 1 })
+		if len(valid) > 0 {
+			ok := lo.CountBy(valid, func(v int) bool { return v == 1 })
+			avail := int(math.Round(float64(ok) / float64(len(valid)) * 100))
+			entry.Availability = &avail
+		}
+		entries = append(entries, entry)
+	}
+
+	output := channelHealthData{
+		UpdatedAt: time.Now().Unix(),
+		Channels:  entries,
+	}
+
+	data, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		common.SysError("failed to marshal channel health data: " + err.Error())
+		return
+	}
+
+	exe, _ := os.Executable()
+	candidates := []string{
+		filepath.Join(filepath.Dir(exe), "channel_health.json"),
+		filepath.Join(".", "channel_health.json"),
+		filepath.Join(".", "web", "dist", "channel_health.json"),
+	}
+	for _, p := range candidates {
+		_ = os.WriteFile(p, data, 0644)
+	}
+}
+
+func runChannelHealthCheck() {
+	channels, err := model.GetAllChannels(0, 0, true, false)
+	if err != nil {
+		common.SysError("channel health check: failed to get channels: " + err.Error())
+		return
+	}
+
+	channelHealthMu.Lock()
+	loadChannelHealthHistory()
+	channelHealthMu.Unlock()
+
+	for _, channel := range channels {
+		if channel.Status != common.ChannelStatusEnabled {
+			continue
+		}
+		tik := time.Now()
+		result := testChannel(channel, "", "", false)
+		tok := time.Now()
+		milliseconds := tok.Sub(tik).Milliseconds()
+
+		var status int
+		if result.localErr != nil || result.newAPIError != nil {
+			status = 0
+		} else if milliseconds > 8000 {
+			status = 2
+		} else {
+			status = 1
+		}
+
+		channelHealthMu.Lock()
+		h := channelHealthHistory[channel.Id]
+		h = append(h, status)
+		if len(h) > maxHealthHistory {
+			h = h[len(h)-maxHealthHistory:]
+		}
+		channelHealthHistory[channel.Id] = h
+		channelHealthMu.Unlock()
+
+		time.Sleep(common.RequestInterval)
+	}
+
+	channelHealthMu.Lock()
+	saveChannelHealthHistory()
+	channelHealthMu.Unlock()
+
+	writeChannelHealthJSON(channels)
+	common.SysLog("channel health check completed")
+}
+
+var autoChannelHealthOnce sync.Once
+
+func AutomaticallyCheckChannelHealth() {
+	if !common.IsMasterNode {
+		return
+	}
+	autoChannelHealthOnce.Do(func() {
+		loadChannelHealthHistory()
+		intervalStr := os.Getenv("HEALTH_INTERVAL")
+		interval := 900
+		if intervalStr != "" {
+			if v, err := strconv.Atoi(intervalStr); err == nil && v > 0 {
+				interval = v
+			}
+		}
+		for {
+			common.SysLog(fmt.Sprintf("starting channel health check (interval: %ds)", interval))
+			runChannelHealthCheck()
+			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	})
 }

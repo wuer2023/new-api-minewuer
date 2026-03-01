@@ -20,13 +20,13 @@ func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 	router.Use(middleware.GlobalWebRateLimit())
 	router.Use(middleware.Cache())
 
-	router.GET("/model_health.json", func(c *gin.Context) {
+	router.GET("/channel_health.json", func(c *gin.Context) {
 		c.Set(middleware.RouteTagKey, "web")
 		exe, _ := os.Executable()
 		candidates := []string{
-			filepath.Join(filepath.Dir(exe), "model_health.json"),
-			filepath.Join(".", "model_health.json"),
-			filepath.Join(".", "web", "dist", "model_health.json"),
+			filepath.Join(filepath.Dir(exe), "channel_health.json"),
+			filepath.Join(".", "channel_health.json"),
+			filepath.Join(".", "web", "dist", "channel_health.json"),
 		}
 		for _, p := range candidates {
 			if data, err := os.ReadFile(p); err == nil {
@@ -35,12 +35,12 @@ func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 				return
 			}
 		}
-		if data, err := buildFS.ReadFile("web/dist/model_health.json"); err == nil {
+		if data, err := buildFS.ReadFile("web/dist/channel_health.json"); err == nil {
 			c.Header("Cache-Control", "no-cache")
 			c.Data(http.StatusOK, "application/json; charset=utf-8", data)
 			return
 		}
-		c.JSON(http.StatusNotFound, gin.H{"error": "model_health.json not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "channel_health.json not found"})
 	})
 
 	router.Use(static.Serve("/", common.EmbedFolder(buildFS, "web/dist")))
