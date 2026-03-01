@@ -27,12 +27,15 @@ import {
   Modal,
   Space,
   Card,
+  Tabs,
+  TabPane,
 } from '@douyinfe/semi-ui';
 import { API, showError, showSuccess, timestamp2string } from '../../helpers';
 import { marked } from 'marked';
 import { useTranslation } from 'react-i18next';
 import { StatusContext } from '../../context/Status';
 import Text from '@douyinfe/semi-ui/lib/es/typography/text';
+import SettingsAnnouncements from '../../pages/Setting/Dashboard/SettingsAnnouncements';
 
 const LEGAL_USER_AGREEMENT_KEY = 'legal.user_agreement';
 const LEGAL_PRIVACY_POLICY_KEY = 'legal.privacy_policy';
@@ -48,9 +51,12 @@ const OtherSetting = () => {
     Footer: '',
     About: '',
     HomePageContent: '',
+    'console_setting.announcements': '',
+    'console_setting.announcements_enabled': '',
   });
   let [loading, setLoading] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [noticeEditorTab, setNoticeEditorTab] = useState('visual');
   const [statusState, statusDispatch] = useContext(StatusContext);
   const [updateData, setUpdateData] = useState({
     tag_name: '',
@@ -90,6 +96,7 @@ const OtherSetting = () => {
 
   // 通用设置
   const formAPISettingGeneral = useRef();
+  const formAPISettingLegal = useRef();
   // 通用设置 - Notice
   const submitNotice = async () => {
     try {
@@ -103,6 +110,18 @@ const OtherSetting = () => {
       setLoadingInput((loadingInput) => ({ ...loadingInput, Notice: false }));
     }
   };
+  const applyNoticeTemplate = (template) => {
+    setInputs((prev) => ({ ...prev, Notice: template }));
+    formAPISettingGeneral.current?.setValue?.('Notice', template);
+    showSuccess(t('模板已应用，可继续修改后保存'));
+  };
+  const appendNoticeSnippet = (snippet) => {
+    const current = inputs.Notice || '';
+    const nextValue = `${current}${current ? '\n\n' : ''}${snippet}`;
+    setInputs((prev) => ({ ...prev, Notice: nextValue }));
+    formAPISettingGeneral.current?.setValue?.('Notice', nextValue);
+  };
+  const noticePreviewHtml = marked.parse(inputs.Notice || '');
   // 通用设置 - UserAgreement
   const submitUserAgreement = async () => {
     try {
@@ -290,6 +309,7 @@ const OtherSetting = () => {
       });
       setInputs(newInputs);
       formAPISettingGeneral.current.setValues(newInputs);
+      formAPISettingLegal.current?.setValues(newInputs);
       formAPIPersonalization.current.setValues(newInputs);
     } else {
       showError(message);
@@ -299,6 +319,10 @@ const OtherSetting = () => {
   useEffect(() => {
     getOptions();
   }, []);
+
+  const onRefresh = async () => {
+    await getOptions();
+  };
 
   // Function to open GitHub release page
   const openGitHubRelease = () => {
@@ -362,19 +386,105 @@ const OtherSetting = () => {
         >
           <Card>
             <Form.Section text={t('通用设置')}>
-              <Form.TextArea
-                label={t('公告')}
-                placeholder={t(
-                  '在此输入新的公告内容，支持 Markdown & HTML 代码',
-                )}
-                field={'Notice'}
-                onChange={handleInputChange}
-                style={{ fontFamily: 'JetBrains Mono, Consolas' }}
-                autosize={{ minRows: 6, maxRows: 12 }}
-              />
+              <Space wrap style={{ marginBottom: 12 }}>
+                <Button
+                  size='small'
+                  theme='light'
+                  type='tertiary'
+                  onClick={() =>
+                    applyNoticeTemplate(
+                      `## ${t('系统公告')}\n\n${t('亲爱的用户，系统将于今晚 23:00 - 23:30 进行维护升级。')}\n\n- ${t('影响范围')}: ${t('可能短暂无法访问')}\n- ${t('预计恢复时间')}: 23:30\n\n${t('感谢您的理解与支持。')}`,
+                    )
+                  }
+                >
+                  {t('维护通知模板')}
+                </Button>
+                <Button
+                  size='small'
+                  theme='light'
+                  type='tertiary'
+                  onClick={() =>
+                    applyNoticeTemplate(
+                      `## ${t('新功能上线')}\n\n${t('我们已上线以下功能：')}\n\n1. ${t('更快的响应速度')}\n2. ${t('更稳定的模型路由')}\n3. ${t('更清晰的数据看板')}\n\n${t('欢迎大家体验并反馈建议。')}`,
+                    )
+                  }
+                >
+                  {t('更新通知模板')}
+                </Button>
+                <Button
+                  size='small'
+                  theme='light'
+                  type='tertiary'
+                  onClick={() => appendNoticeSnippet(`## ${t('标题')}`)}
+                >
+                  {t('插入标题')}
+                </Button>
+                <Button
+                  size='small'
+                  theme='light'
+                  type='tertiary'
+                  onClick={() =>
+                    appendNoticeSnippet(`- ${t('要点一')}\n- ${t('要点二')}`)
+                  }
+                >
+                  {t('插入列表')}
+                </Button>
+              </Space>
+
+              <Tabs
+                type='line'
+                activeKey={noticeEditorTab}
+                onChange={setNoticeEditorTab}
+              >
+                <TabPane tab={t('可视化编辑')} itemKey='visual'>
+                  <Form.TextArea
+                    label={t('公告')}
+                    placeholder={t(
+                      '在此输入新的公告内容，支持 Markdown & HTML 代码',
+                    )}
+                    field={'Notice'}
+                    onChange={handleInputChange}
+                    style={{ fontFamily: 'JetBrains Mono, Consolas' }}
+                    autosize={{ minRows: 6, maxRows: 12 }}
+                    helpText={t(
+                      '可先套用模板，再按需修改。完成后点击“设置公告”生效。',
+                    )}
+                  />
+                </TabPane>
+                <TabPane tab={t('预览效果')} itemKey='preview'>
+                  <Card style={{ backgroundColor: 'var(--semi-color-fill-0)' }}>
+                    {inputs.Notice ? (
+                      <div
+                        className='notice-content-scroll'
+                        style={{ maxHeight: 320, overflowY: 'auto' }}
+                        dangerouslySetInnerHTML={{ __html: noticePreviewHtml }}
+                      />
+                    ) : (
+                      <Text type='tertiary'>
+                        {t('暂无内容，请先在“可视化编辑”中输入公告')}
+                      </Text>
+                    )}
+                  </Card>
+                </TabPane>
+              </Tabs>
+
               <Button onClick={submitNotice} loading={loadingInput['Notice']}>
                 {t('设置公告')}
               </Button>
+            </Form.Section>
+          </Card>
+        </Form>
+
+        <Card>
+          <SettingsAnnouncements options={inputs} refresh={onRefresh} />
+        </Card>
+
+        <Form
+          values={inputs}
+          getFormApi={(formAPI) => (formAPISettingLegal.current = formAPI)}
+        >
+          <Card>
+            <Form.Section text={t('法律协议')}>
               <Form.TextArea
                 label={t('用户协议')}
                 placeholder={t(

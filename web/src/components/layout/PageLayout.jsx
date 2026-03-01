@@ -23,6 +23,7 @@ import SiderBar from './SiderBar';
 import App from '../../App';
 import FooterBar from './Footer';
 import { ToastContainer } from 'react-toastify';
+import HealthFloatingButton from '../common/HealthFloatingButton';
 import React, { useContext, useEffect, useState } from 'react';
 import { useIsMobile } from '../../hooks/common/useIsMobile';
 import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
@@ -207,6 +208,7 @@ const PageLayout = () => {
         </Layout>
       </Layout>
       <ToastContainer />
+      <HealthFloatingButton />
     </Layout>
   );
 };

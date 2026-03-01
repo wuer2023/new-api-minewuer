@@ -46,7 +46,7 @@ export default function GeneralSettings(props) {
   const [inputs, setInputs] = useState({
     TopUpLink: '',
     'general_setting.docs_link': '',
-    'general_setting.quota_display_type': 'USD',
+    'general_setting.quota_display_type': 'CNY',
     'general_setting.custom_currency_symbol': '¤',
     'general_setting.custom_currency_exchange_rate': '',
     QuotaPerUnit: '',
@@ -140,7 +140,7 @@ export default function GeneralSettings(props) {
     ) {
       currentInputs['general_setting.quota_display_type'] = props.options
         .DisplayInCurrencyEnabled
-        ? 'USD'
+        ? 'CNY'
         : 'TOKENS';
     }
     // 回填自定义货币相关字段（如果后端已存在）
@@ -295,7 +295,9 @@ export default function GeneralSettings(props) {
                   field={'token_setting.max_user_tokens'}
                   step={1}
                   min={1}
-                  extraText={t('每个用户最多可创建的令牌数量，默认 1000，设置过大可能会影响性能')}
+                  extraText={t(
+                    '每个用户最多可创建的令牌数量，默认 1000，设置过大可能会影响性能',
+                  )}
                   placeholder={'1000'}
                   onChange={handleFieldChange('token_setting.max_user_tokens')}
                 />

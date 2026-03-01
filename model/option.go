@@ -408,6 +408,10 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.ModelRequestRateLimitSuccessCount, _ = strconv.Atoi(value)
 	case "ModelRequestRateLimitGroup":
 		err = setting.UpdateModelRequestRateLimitGroupByJSONString(value)
+	case "ModelRequestRateLimitChannel":
+		err = setting.UpdateModelRequestRateLimitChannelByJSONString(value)
+	case "ModelRequestRateLimitModel":
+		err = setting.UpdateModelRequestRateLimitModelByJSONString(value)
 	case "RetryTimes":
 		common.RetryTimes, _ = strconv.Atoi(value)
 	case "DataExportInterval":

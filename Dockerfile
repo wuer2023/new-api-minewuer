@@ -28,11 +28,19 @@ RUN go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates tzdata libasan8 wget \
+    && apt-get install -y --no-install-recommends ca-certificates tzdata libasan8 wget python3 python3-pip \
+    && pip3 install --no-cache-dir --break-system-packages aiohttp \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 
-COPY --from=builder2 /build/new-api /
+COPY --from=builder2 /build/new-api /app/new-api
+COPY check_models.py /app/check_models.py
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+ENV HEALTH_OUTPUT_PATH=/app/model_health.json
+ENV HEALTH_HISTORY_PATH=/data/.model_health_history.json
+
 EXPOSE 3000
 WORKDIR /data
-ENTRYPOINT ["/new-api"]
+ENTRYPOINT ["/app/start.sh"]

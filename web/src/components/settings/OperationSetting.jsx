@@ -44,7 +44,7 @@ const OperationSetting = () => {
     QuotaPerUnit: 0,
     USDExchangeRate: 0,
     RetryTimes: 0,
-    'general_setting.quota_display_type': 'USD',
+    'general_setting.quota_display_type': 'CNY',
     DisplayTokenStatEnabled: false,
     DefaultCollapseSidebar: false,
     DemoSiteEnabled: false,

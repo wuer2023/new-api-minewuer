@@ -75,7 +75,7 @@ export const useModelPricingData = () => {
 
   // 默认货币与站点展示类型同步（USD/CNY），TOKENS 时仍允许切换视图内货币
   const siteDisplayType = useMemo(
-    () => statusState?.status?.quota_display_type || 'USD',
+    () => statusState?.status?.quota_display_type || 'CNY',
     [statusState],
   );
   useEffect(() => {

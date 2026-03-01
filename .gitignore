@@ -27,3 +27,5 @@ data/
 .gomodcache/
 .gocache-temp
 .gopath
+__pycache__/
+.model_health_history.json

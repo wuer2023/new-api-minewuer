@@ -229,6 +229,7 @@ const EditChannelModal = (props) => {
   const [modelMappingValueSelected, setModelMappingValueSelected] =
     useState('');
   const [ollamaModalVisible, setOllamaModalVisible] = useState(false);
+  const [modelPrefixSuffix, setModelPrefixSuffix] = useState({ prefix: '', suffix: '' });
   const formApiRef = useRef(null);
   const [vertexKeys, setVertexKeys] = useState([]);
   const [vertexFileList, setVertexFileList] = useState([]);
@@ -999,6 +1000,45 @@ const EditChannelModal = (props) => {
     }
     setLoading(false);
     return null;
+  };
+
+  const handleApplyPrefixSuffix = () => {
+    const { prefix, suffix } = modelPrefixSuffix;
+    if (!prefix && !suffix) {
+      showInfo(t('请至少填写前缀或后缀'));
+      return;
+    }
+    const models = inputs.models || [];
+    if (models.length === 0) {
+      showInfo(t('当前渠道没有模型，请先添加模型'));
+      return;
+    }
+    let parsed = {};
+    const currentMapping = inputs.model_mapping;
+    if (typeof currentMapping === 'string' && currentMapping.trim()) {
+      try {
+        parsed = JSON.parse(currentMapping);
+      } catch (e) {
+        parsed = {};
+      }
+    }
+    models.forEach((model) => {
+      const newName = `${prefix}${model}${suffix}`;
+      if (newName !== model) {
+        parsed[newName] = model;
+      }
+    });
+    const nextMapping = JSON.stringify(parsed, null, 2);
+    handleInputChange('model_mapping', nextMapping);
+    if (formApiRef.current) {
+      formApiRef.current.setValue('model_mapping', nextMapping);
+    }
+    const addedModels = models
+      .map((m) => `${prefix}${m}${suffix}`)
+      .filter((nm) => nm !== models.find((om) => `${prefix}${om}${suffix}` === nm) || !models.includes(nm));
+    const newModels = Array.from(new Set([...models, ...addedModels]));
+    handleInputChange('models', newModels);
+    showSuccess(t('已生成 {{count}} 条模型重定向', { count: Object.keys(parsed).length }));
   };
 
   const openModelMappingValueModal = async ({ pairKey, value }) => {
@@ -3232,6 +3272,75 @@ const EditChannelModal = (props) => {
                         '键为请求中的模型名称，值为要替换的模型名称',
                       )}
                     />
+
+                    <div
+                      style={{
+                        marginTop: 16,
+                        padding: 16,
+                        borderRadius: 12,
+                        border: '1px solid var(--semi-color-border)',
+                        backgroundColor: 'var(--semi-color-bg-2)',
+                      }}
+                    >
+                      <div className='flex items-center gap-2 mb-3'>
+                        <Tag color='blue' size='small'>{t('快捷工具')}</Tag>
+                        <Text size='small' type='tertiary'>
+                          {t('为当前渠道的所有模型批量添加前缀/后缀，自动生成重定向映射')}
+                        </Text>
+                      </div>
+                      <div className='flex items-end gap-2'>
+                        <div style={{ flex: 1 }}>
+                          <Text size='small' style={{ marginBottom: 4, display: 'block' }}>
+                            {t('前缀')}
+                          </Text>
+                          <Input
+                            size='small'
+                            placeholder={t('例如：my-')}
+                            value={modelPrefixSuffix.prefix}
+                            onChange={(v) => setModelPrefixSuffix((prev) => ({ ...prev, prefix: v }))}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <Text size='small' style={{ marginBottom: 4, display: 'block' }}>
+                            {t('后缀')}
+                          </Text>
+                          <Input
+                            size='small'
+                            placeholder={t('例如：-v2')}
+                            value={modelPrefixSuffix.suffix}
+                            onChange={(v) => setModelPrefixSuffix((prev) => ({ ...prev, suffix: v }))}
+                          />
+                        </div>
+                        <Button
+                          size='small'
+                          type='primary'
+                          theme='light'
+                          onClick={handleApplyPrefixSuffix}
+                          disabled={!modelPrefixSuffix.prefix && !modelPrefixSuffix.suffix}
+                        >
+                          {t('生成')}
+                        </Button>
+                      </div>
+                      {(modelPrefixSuffix.prefix || modelPrefixSuffix.suffix) && inputs.models?.length > 0 && (
+                        <div style={{ marginTop: 10 }}>
+                          <Text size='small' type='tertiary'>
+                            {t('预览：')}
+                            <Text size='small' code>
+                              {`${modelPrefixSuffix.prefix}${inputs.models[0]}${modelPrefixSuffix.suffix}`}
+                            </Text>
+                            {' → '}
+                            <Text size='small' code>
+                              {inputs.models[0]}
+                            </Text>
+                            {inputs.models.length > 1 && (
+                              <Text size='small' type='tertiary'>
+                                {t(' 等 {{count}} 个模型', { count: inputs.models.length })}
+                              </Text>
+                            )}
+                          </Text>
+                        </div>
+                      )}
+                    </div>
                   </Card>
                 </div>
 

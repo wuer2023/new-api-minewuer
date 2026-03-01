@@ -594,7 +594,9 @@ export function getOAuthProviderIcon(iconName, size = 20) {
     return <IconComp size={iconSize} />;
   }
 
-  return <Avatar size='extra-extra-small'>{raw.charAt(0).toUpperCase()}</Avatar>;
+  return (
+    <Avatar size='extra-extra-small'>{raw.charAt(0).toUpperCase()}</Avatar>
+  );
 }
 
 // 颜色列表
@@ -992,7 +994,7 @@ export function renderQuotaNumberWithDigit(num, digits = 2) {
   if (typeof num !== 'number' || isNaN(num)) {
     return 0;
   }
-  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
+  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'CNY';
   num = num.toFixed(digits);
   if (quotaDisplayType === 'CNY') {
     return '¥' + num;
@@ -1062,7 +1064,7 @@ export function getQuotaWithUnit(quota, digits = 6) {
 }
 
 export function renderQuotaWithAmount(amount) {
-  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
+  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'CNY';
   if (quotaDisplayType === 'TOKENS') {
     return renderNumber(renderUnitWithQuota(amount));
   }
@@ -1087,7 +1089,7 @@ export function renderQuotaWithAmount(amount) {
  * @returns {Object} - { symbol, rate, type }
  */
 export function getCurrencyConfig() {
-  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
+  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'CNY';
   const statusStr = localStorage.getItem('status');
 
   let symbol = '$';
@@ -1128,7 +1130,7 @@ export function convertUSDToCurrency(usdAmount, digits = 2) {
 
 export function renderQuota(quota, digits = 2) {
   let quotaPerUnit = localStorage.getItem('quota_per_unit');
-  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
+  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'CNY';
   quotaPerUnit = parseFloat(quotaPerUnit);
   if (quotaDisplayType === 'TOKENS') {
     return renderNumber(quota);
@@ -1859,7 +1861,7 @@ export function renderAudioModelPrice(
 }
 
 export function renderQuotaWithPrompt(quota, digits) {
-  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
+  const quotaDisplayType = localStorage.getItem('quota_display_type') || 'CNY';
   if (quotaDisplayType !== 'TOKENS') {
     return i18next.t('等价金额：') + renderQuota(quota, digits);
   }
