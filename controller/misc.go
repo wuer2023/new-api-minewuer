@@ -116,6 +116,14 @@ func GetStatus(c *gin.Context) {
 		"user_agreement_enabled":      legalSetting.UserAgreement != "",
 		"privacy_policy_enabled":      legalSetting.PrivacyPolicy != "",
 		"checkin_enabled":             operation_setting.GetCheckinSetting().Enabled,
+		"maintenance_mode_enabled":         common.OptionMap["MaintenanceModeEnabled"] == "true",
+		"maintenance_admin_bypass_enabled": common.OptionMap["MaintenanceAdminBypassEnabled"] == "true",
+		"maintenance_page_title":           common.OptionMap["MaintenancePageTitle"],
+		"maintenance_page_content":         common.OptionMap["MaintenancePageContent"],
+		"maintenance_countdown_target":     common.OptionMap["MaintenanceCountdownTarget"],
+		"maintenance_estimated_completion_time": common.OptionMap["MaintenanceEstimatedCompletionTime"],
+		"maintenance_iframe_url":           common.OptionMap["MaintenanceIframeURL"],
+		"maintenance_page_mode":            common.OptionMap["MaintenancePageMode"],
 		"_qn":                         "new-api",
 	}
 

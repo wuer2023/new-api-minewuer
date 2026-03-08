@@ -34,6 +34,8 @@ const ModelsActions = ({
   setEditingModel,
   setShowEdit,
   batchDeleteModels,
+  batchUpdateBillingType,
+  clearAllModels,
   syncing,
   previewing,
   syncUpstream,
@@ -53,6 +55,9 @@ const ModelsActions = ({
   const [conflicts, setConflicts] = useState([]);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncLocale, setSyncLocale] = useState('zh');
+  const [showClearAllModal, setShowClearAllModal] = useState(false);
+  const [showBatchBillingModal, setShowBatchBillingModal] = useState(false);
+  const [batchBillingType, setBatchBillingType] = useState(0);
 
   const handleSyncUpstream = async (locale) => {
     // 先预览
@@ -100,6 +105,13 @@ const ModelsActions = ({
     const items = selectedKeys.map((m) => m.model_name);
     setPrefillInit({ id: undefined, type: 'model', items });
     setShowAddPrefill(true);
+  };
+
+  const handleBatchSetBillingType = async (billingType = batchBillingType) => {
+    const ok = await batchUpdateBillingType?.(billingType);
+    if (ok) {
+      setShowBatchBillingModal(false);
+    }
   };
 
   return (
@@ -172,6 +184,25 @@ const ModelsActions = ({
           {t('预填组管理')}
         </Button>
 
+        <Button
+          type='warning'
+          className='flex-1 md:flex-initial'
+          size='small'
+          onClick={() => setShowClearAllModal(true)}
+        >
+          {t('清空模型配置')}
+        </Button>
+
+        <Button
+          type='secondary'
+          className='flex-1 md:flex-initial'
+          size='small'
+          disabled={selectedKeys.length === 0}
+          onClick={() => setShowBatchBillingModal(true)}
+        >
+          {t('批量设置收费')}
+        </Button>
+
         <CompactModeToggle
           compactMode={compactMode}
           setCompactMode={setCompactMode}
@@ -186,6 +217,7 @@ const ModelsActions = ({
         onAddPrefill={handleAddToPrefill}
         onClear={handleClearSelected}
         onCopy={handleCopyNames}
+        onSetBillingType={handleBatchSetBillingType}
       />
 
       <Modal
@@ -200,6 +232,45 @@ const ModelsActions = ({
             count: selectedKeys.length,
           })}
         </div>
+      </Modal>
+
+      <Modal
+        title={t('批量设置收费状态')}
+        visible={showBatchBillingModal}
+        onCancel={() => setShowBatchBillingModal(false)}
+        onOk={() => handleBatchSetBillingType(batchBillingType)}
+      >
+        <div className='flex flex-col gap-3'>
+          <div>
+            {t('为已选择的 {{count}} 个模型设置收费状态', {
+              count: selectedKeys.length,
+            })}
+          </div>
+          <RadioGroup
+            direction='vertical'
+            value={batchBillingType}
+            onChange={(e) => setBatchBillingType(e.target.value)}
+          >
+            <Radio value={0}>{t('免费')}</Radio>
+            <Radio value={1}>{t('付费')}</Radio>
+          </RadioGroup>
+        </div>
+      </Modal>
+
+      <Modal
+        title={t('清空全部模型配置')}
+        visible={showClearAllModal}
+        onCancel={() => setShowClearAllModal(false)}
+        onOk={async () => {
+          const ok = await clearAllModels?.();
+          if (ok) {
+            setShowClearAllModal(false);
+          }
+        }}
+        type='warning'
+        okButtonProps={{ type: 'danger' }}
+      >
+        <div>{t('此操作会删除当前所有模型配置，且不可恢复，请再次确认。')}</div>
       </Modal>
 
       <SyncWizardModal

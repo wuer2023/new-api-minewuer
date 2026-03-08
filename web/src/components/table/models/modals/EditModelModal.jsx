@@ -117,6 +117,7 @@ const EditModelModal = (props) => {
     description: '',
     icon: '',
     tags: [],
+    billing_type: 0,
     vendor_id: undefined,
     vendor: '',
     vendor_icon: '',
@@ -151,6 +152,7 @@ const EditModelModal = (props) => {
         // 处理status/sync_official，将数字转为布尔值
         data.status = data.status === 1;
         data.sync_official = (data.sync_official ?? 1) === 1;
+        data.billing_type = data.billing_type ?? 0;
         if (formApiRef.current) {
           formApiRef.current.setValues({ ...getInitValues(), ...data });
         }
@@ -421,6 +423,18 @@ const EditModelModal = (props) => {
                           </Space>
                         ),
                       })}
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <Form.Select
+                      field='billing_type'
+                      label={t('收费状态')}
+                      placeholder={t('请选择收费状态')}
+                      optionList={[
+                        { label: t('免费'), value: 0 },
+                        { label: t('付费'), value: 1 },
+                      ]}
+                      style={{ width: '100%' }}
                     />
                   </Col>
                   <Col span={24}>

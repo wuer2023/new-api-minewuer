@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import {
   Avatar,
+  Button,
   Card,
   Tag,
   Divider,
@@ -34,19 +35,17 @@ import {
 } from '../../../../helpers';
 import { Coins, BarChart2, Users } from 'lucide-react';
 
-const UserInfoHeader = ({ t, userState }) => {
-  const getUsername = () => {
-    if (userState.user) {
-      return userState.user.username;
-    } else {
-      return 'null';
-    }
-  };
+const UserInfoHeader = ({ t, userState, onEditProfile }) => {
+  const getUsername = () => userState?.user?.username || 'null';
+
+  const getDisplayName = () => userState?.user?.display_name || getUsername();
+
+  const getAvatarUrl = () => userState?.user?.avatar_url || '';
 
   const getAvatarText = () => {
-    const username = getUsername();
-    if (username && username.length > 0) {
-      return username.slice(0, 2).toUpperCase();
+    const displayName = getDisplayName();
+    if (displayName && displayName.length > 0) {
+      return displayName.slice(0, 2).toUpperCase();
     }
     return 'NA';
   };
@@ -69,17 +68,26 @@ const UserInfoHeader = ({ t, userState }) => {
           <div className='relative z-10 h-full flex flex-col justify-end p-6'>
             <div className='flex items-center'>
               <div className='flex items-stretch gap-3 sm:gap-4 flex-1 min-w-0'>
-                <Avatar size='large' color={stringToColor(getUsername())}>
-                  {getAvatarText()}
-                </Avatar>
+                {getAvatarUrl() ? (
+                  <Avatar size='large' src={getAvatarUrl()}>
+                    {getAvatarText()}
+                  </Avatar>
+                ) : (
+                  <Avatar size='large' color={stringToColor(getUsername())}>
+                    {getAvatarText()}
+                  </Avatar>
+                )}
                 <div className='flex-1 min-w-0 flex flex-col justify-between'>
                   <div
                     className='text-3xl font-bold truncate'
                     style={{ color: 'white' }}
                   >
-                    {getUsername()}
+                    {getDisplayName()}
                   </div>
-                  <div className='flex flex-wrap items-center gap-2'>
+                  <div className='flex flex-wrap items-center gap-2 mt-1'>
+                    <Tag size='large' shape='circle' style={{ color: 'white' }}>
+                      @{getUsername()}
+                    </Tag>
                     {isRoot() ? (
                       <Tag
                         size='large'
@@ -108,6 +116,11 @@ const UserInfoHeader = ({ t, userState }) => {
                     <Tag size='large' shape='circle' style={{ color: 'white' }}>
                       ID: {userState?.user?.id}
                     </Tag>
+                  </div>
+                  <div className='mt-3'>
+                    <Button theme='solid' onClick={onEditProfile}>
+                      {t('编辑昵称和头像')}
+                    </Button>
                   </div>
                 </div>
               </div>

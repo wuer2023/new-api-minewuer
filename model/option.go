@@ -63,6 +63,14 @@ func InitOptionMap() {
 	common.OptionMap["SMTPToken"] = ""
 	common.OptionMap["SMTPSSLEnabled"] = strconv.FormatBool(common.SMTPSSLEnabled)
 	common.OptionMap["Notice"] = ""
+	common.OptionMap["MaintenanceModeEnabled"] = strconv.FormatBool(false)
+	common.OptionMap["MaintenanceAdminBypassEnabled"] = strconv.FormatBool(true)
+	common.OptionMap["MaintenancePageTitle"] = "站点维护中"
+	common.OptionMap["MaintenancePageContent"] = "站点正在维护中，请稍后再试。"
+	common.OptionMap["MaintenanceCountdownTarget"] = ""
+	common.OptionMap["MaintenanceEstimatedCompletionTime"] = ""
+	common.OptionMap["MaintenanceIframeURL"] = ""
+	common.OptionMap["MaintenancePageMode"] = "default"
 	common.OptionMap["About"] = ""
 	common.OptionMap["HomePageContent"] = ""
 	common.OptionMap["Footer"] = common.Footer
@@ -298,6 +306,9 @@ func updateOptionMap(key string, value string) (err error) {
 			setting.DefaultUseAutoGroup = boolValue
 		case "ExposeRatioEnabled":
 			ratio_setting.SetExposeRatioEnabled(boolValue)
+		case "MaintenanceModeEnabled":
+		case "MaintenanceAdminBypassEnabled":
+		case "MaintenancePageMode":
 		}
 	}
 	switch key {
@@ -374,6 +385,12 @@ func updateOptionMap(key string, value string) (err error) {
 		common.Footer = value
 	case "SystemName":
 		common.SystemName = value
+	case "MaintenancePageTitle":
+	case "MaintenancePageContent":
+	case "MaintenanceCountdownTarget":
+	case "MaintenanceEstimatedCompletionTime":
+	case "MaintenanceIframeURL":
+	case "MaintenancePageMode":
 	case "Logo":
 		common.Logo = value
 	case "WeChatServerAddress":

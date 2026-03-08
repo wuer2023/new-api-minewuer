@@ -45,6 +45,7 @@ import EmailBindModal from './personal/modals/EmailBindModal';
 import WeChatBindModal from './personal/modals/WeChatBindModal';
 import AccountDeleteModal from './personal/modals/AccountDeleteModal';
 import ChangePasswordModal from './personal/modals/ChangePasswordModal';
+import EditProfileModal from './personal/modals/EditProfileModal';
 
 const PersonalSetting = () => {
   const [userState, userDispatch] = useContext(UserContext);
@@ -65,6 +66,7 @@ const PersonalSetting = () => {
   const [showWeChatBindModal, setShowWeChatBindModal] = useState(false);
   const [showEmailBindModal, setShowEmailBindModal] = useState(false);
   const [showAccountDeleteModal, setShowAccountDeleteModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [turnstileEnabled, setTurnstileEnabled] = useState(false);
   const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -346,6 +348,32 @@ const PersonalSetting = () => {
     setShowChangePasswordModal(false);
   };
 
+  const updateProfile = async ({ display_name, avatar_file, clear_avatar }) => {
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('display_name', display_name);
+    if (avatar_file) {
+      formData.append('avatar', avatar_file);
+    }
+    if (clear_avatar) {
+      formData.append('avatar_action', 'remove');
+    }
+    const res = await API.post('/api/user/self/profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    const { success, message } = res.data;
+    if (success) {
+      showSuccess(t('个人资料更新成功！'));
+      setShowEditProfileModal(false);
+      await getUserData();
+    } else {
+      showError(message);
+    }
+    setLoading(false);
+  };
+
   const sendVerificationCode = async () => {
     if (inputs.email === '') {
       showError(t('请输入邮箱！'));
@@ -447,7 +475,11 @@ const PersonalSetting = () => {
       <div className='flex justify-center'>
         <div className='w-full max-w-7xl mx-auto px-2'>
           {/* 顶部用户信息区域 */}
-          <UserInfoHeader t={t} userState={userState} />
+          <UserInfoHeader
+            t={t}
+            userState={userState}
+            onEditProfile={() => setShowEditProfileModal(true)}
+          />
 
           {/* 签到日历 - 仅在启用时显示 */}
           {status?.checkin_enabled && (
@@ -549,6 +581,15 @@ const PersonalSetting = () => {
         turnstileEnabled={turnstileEnabled}
         turnstileSiteKey={turnstileSiteKey}
         setTurnstileToken={setTurnstileToken}
+      />
+
+      <EditProfileModal
+        t={t}
+        visible={showEditProfileModal}
+        onCancel={() => setShowEditProfileModal(false)}
+        onSubmit={updateProfile}
+        user={userState?.user}
+        saving={loading}
       />
     </div>
   );

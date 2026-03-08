@@ -36,6 +36,7 @@ export const useModelPricingData = () => {
   const [selectedModel, setSelectedModel] = useState(null);
   const [filterGroup, setFilterGroup] = useState('all'); // 用于 Table 的可用分组筛选，"all" 表示不过滤
   const [filterQuotaType, setFilterQuotaType] = useState('all'); // 计费类型筛选: 'all' | 0 | 1
+  const [filterBillingType, setFilterBillingType] = useState('all');
   const [filterEndpointType, setFilterEndpointType] = useState('all'); // 端点类型筛选: 'all' | string
   const [filterVendor, setFilterVendor] = useState('all'); // 供应商筛选: 'all' | 'unknown' | string
   const [filterTag, setFilterTag] = useState('all'); // 模型标签筛选: 'all' | string
@@ -103,6 +104,12 @@ export const useModelPricingData = () => {
       result = result.filter((model) => model.quota_type === filterQuotaType);
     }
 
+    if (filterBillingType !== 'all') {
+      result = result.filter(
+        (model) => (model.billing_type ?? 0) === filterBillingType,
+      );
+    }
+
     // 端点类型筛选
     if (filterEndpointType !== 'all') {
       result = result.filter(
@@ -156,8 +163,11 @@ export const useModelPricingData = () => {
     searchValue,
     filterGroup,
     filterQuotaType,
+    filterBillingType,
+    filterEndpointType,
     filterEndpointType,
     filterVendor,
+    filterTag,
     filterTag,
   ]);
 
@@ -308,6 +318,7 @@ export const useModelPricingData = () => {
   }, [
     filterGroup,
     filterQuotaType,
+    filterBillingType,
     filterEndpointType,
     filterVendor,
     filterTag,
@@ -334,6 +345,8 @@ export const useModelPricingData = () => {
     setFilterGroup,
     filterQuotaType,
     setFilterQuotaType,
+    filterBillingType,
+    setFilterBillingType,
     filterEndpointType,
     setFilterEndpointType,
     filterVendor,

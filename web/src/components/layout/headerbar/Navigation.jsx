@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SkeletonWrapper from '../components/SkeletonWrapper';
+import MaintenanceCountdownBanner from '../../common/MaintenanceCountdownBanner';
 
 const Navigation = ({
   mainNavLinks,
@@ -27,6 +28,8 @@ const Navigation = ({
   isLoading,
   userState,
   pricingRequireAuth,
+  maintenanceAnnouncement,
+  t,
 }) => {
   const renderNavLinks = () => {
     const baseClasses =
@@ -61,6 +64,14 @@ const Navigation = ({
         targetPath = '/login';
       }
 
+      if (link.itemKey === 'home') {
+        return (
+          <a key={link.itemKey} href='/landing' className={commonLinkClasses}>
+            {linkContent}
+          </a>
+        );
+      }
+
       return (
         <Link key={link.itemKey} to={targetPath} className={commonLinkClasses}>
           {linkContent}
@@ -70,7 +81,7 @@ const Navigation = ({
   };
 
   return (
-    <nav className='flex flex-1 items-center gap-1 lg:gap-2 mx-2 md:mx-4 overflow-x-auto whitespace-nowrap scrollbar-hide'>
+    <nav className='flex flex-1 items-start gap-1 lg:gap-2 mx-2 md:mx-4 overflow-visible whitespace-nowrap scrollbar-hide pt-2'>
       <SkeletonWrapper
         loading={isLoading}
         type='navigation'
@@ -81,6 +92,15 @@ const Navigation = ({
       >
         {renderNavLinks()}
       </SkeletonWrapper>
+      {maintenanceAnnouncement && !isMobile && (
+        <div className='ml-4 flex min-w-[24rem] shrink-0 justify-center self-start'>
+          <MaintenanceCountdownBanner
+            announcement={maintenanceAnnouncement}
+            t={t}
+            navMode
+          />
+        </div>
+      )}
     </nav>
   );
 };

@@ -51,6 +51,7 @@ const ModelsPage = () => {
     setEditingModel,
     setShowEdit,
     batchDeleteModels,
+    batchUpdateBillingType,
 
     // Filters state
     formInitValues,
@@ -168,6 +169,8 @@ const ModelsPage = () => {
               setEditingModel={setEditingModel}
               setShowEdit={setShowEdit}
               batchDeleteModels={batchDeleteModels}
+              batchUpdateBillingType={batchUpdateBillingType}
+              clearAllModels={modelsData.clearAllModels}
               syncing={modelsData.syncing}
               syncUpstream={modelsData.syncUpstream}
               previewing={modelsData.previewing}

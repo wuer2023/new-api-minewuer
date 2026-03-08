@@ -26,6 +26,9 @@ import {
   IllustrationConstructionDark,
 } from '@douyinfe/semi-illustrations';
 import ScrollableContainer from '../common/ui/ScrollableContainer';
+import MaintenanceCountdownBanner, {
+  getActiveMaintenanceAnnouncement,
+} from '../common/MaintenanceCountdownBanner';
 
 const AnnouncementsPanel = ({
   announcementData,
@@ -34,6 +37,7 @@ const AnnouncementsPanel = ({
   ILLUSTRATION_SIZE,
   t,
 }) => {
+  const maintenanceAnnouncement = getActiveMaintenanceAnnouncement(announcementData);
   return (
     <Card
       {...CARD_PROPS}
@@ -77,6 +81,15 @@ const AnnouncementsPanel = ({
       bodyStyle={{ padding: 0 }}
     >
       <ScrollableContainer maxHeight='24rem'>
+        {maintenanceAnnouncement && (
+          <div className='p-3 pb-0'>
+            <MaintenanceCountdownBanner
+              announcement={maintenanceAnnouncement}
+              t={t}
+              compact
+            />
+          </div>
+        )}
         {announcementData.length > 0 ? (
           <Timeline mode='left'>
             {announcementData.map((item, idx) => {

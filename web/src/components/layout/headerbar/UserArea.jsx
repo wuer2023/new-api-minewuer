@@ -40,6 +40,8 @@ const UserArea = ({
   t,
 }) => {
   const dropdownRef = useRef(null);
+  const displayName = userState?.user?.display_name || userState?.user?.username;
+  const avatarText = (displayName || 'NA').slice(0, 2).toUpperCase();
   if (isLoading) {
     return (
       <SkeletonWrapper
@@ -121,16 +123,22 @@ const UserArea = ({
             type='tertiary'
             className='flex items-center gap-1.5 !p-1 !rounded-full hover:!bg-semi-color-fill-1 dark:hover:!bg-gray-700 !bg-semi-color-fill-0 dark:!bg-semi-color-fill-1 dark:hover:!bg-semi-color-fill-2'
           >
-            <Avatar
-              size='extra-small'
-              color={stringToColor(userState.user.username)}
-              className='mr-1'
-            >
-              {userState.user.username[0].toUpperCase()}
-            </Avatar>
+            {userState.user.avatar_url ? (
+              <Avatar size='extra-small' src={userState.user.avatar_url} className='mr-1'>
+                {avatarText}
+              </Avatar>
+            ) : (
+              <Avatar
+                size='extra-small'
+                color={stringToColor(userState.user.username)}
+                className='mr-1'
+              >
+                {avatarText}
+              </Avatar>
+            )}
             <span className='hidden md:inline'>
               <Typography.Text className='!text-xs !font-medium !text-semi-color-text-1 dark:!text-gray-300 mr-1'>
-                {userState.user.username}
+                {displayName}
               </Typography.Text>
             </span>
             <ChevronDown

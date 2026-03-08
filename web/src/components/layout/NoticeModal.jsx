@@ -35,6 +35,9 @@ import {
 } from '@douyinfe/semi-illustrations';
 import { StatusContext } from '../../context/Status';
 import { Bell, Megaphone } from 'lucide-react';
+import MaintenanceCountdownBanner, {
+  getActiveMaintenanceAnnouncement,
+} from '../common/MaintenanceCountdownBanner';
 
 const NoticeModal = ({
   visible,
@@ -53,6 +56,10 @@ const NoticeModal = ({
   const announcements = statusState?.status?.announcements || [];
 
   const unreadSet = useMemo(() => new Set(unreadKeys), [unreadKeys]);
+  const maintenanceAnnouncement = useMemo(
+    () => getActiveMaintenanceAnnouncement(announcements),
+    [announcements],
+  );
 
   const getKeyForItem = (item) =>
     `${item?.publishDate || ''}-${(item?.content || '').slice(0, 30)}`;
@@ -168,6 +175,13 @@ const NoticeModal = ({
 
     return (
       <div className='max-h-[55vh] overflow-y-auto pr-2 card-content-scroll'>
+        {maintenanceAnnouncement && (
+          <MaintenanceCountdownBanner
+            announcement={maintenanceAnnouncement}
+            t={t}
+            compact
+          />
+        )}
         <Timeline mode='left'>
           {processedAnnouncements.map((item, idx) => {
             const htmlContent = marked.parse(item.content || '');

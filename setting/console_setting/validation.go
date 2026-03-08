@@ -180,6 +180,34 @@ func validateAnnouncements(announcementsStr string) error {
 				return fmt.Errorf("第%d个公告的说明长度不能超过200字符", i+1)
 			}
 		}
+		if enabled, exists := ann["maintenanceEnabled"]; exists {
+			if _, ok := enabled.(bool); !ok {
+				return fmt.Errorf("第%d个公告的维护倒计时开关格式错误", i+1)
+			}
+		}
+		if countdownTitle, exists := ann["countdownTitle"]; exists {
+			if titleStr, ok := countdownTitle.(string); !ok || len(titleStr) > 80 {
+				return fmt.Errorf("第%d个公告的倒计时标题长度不能超过80字符", i+1)
+			}
+		}
+		if countdownTarget, exists := ann["countdownTarget"]; exists {
+			countdownTargetStr, ok := countdownTarget.(string)
+			if !ok || countdownTargetStr == "" {
+				return fmt.Errorf("第%d个公告的维护倒计时时间不能为空", i+1)
+			}
+			if _, err := time.Parse(time.RFC3339, countdownTargetStr); err != nil {
+				return fmt.Errorf("第%d个公告的维护倒计时时间格式错误", i+1)
+			}
+		}
+		if estimatedCompletionTime, exists := ann["estimatedCompletionTime"]; exists {
+			estimatedCompletionTimeStr, ok := estimatedCompletionTime.(string)
+			if !ok || estimatedCompletionTimeStr == "" {
+				return fmt.Errorf("第%d个公告的预计完成时间不能为空", i+1)
+			}
+			if _, err := time.Parse(time.RFC3339, estimatedCompletionTimeStr); err != nil {
+				return fmt.Errorf("第%d个公告的预计完成时间格式错误", i+1)
+			}
+		}
 	}
 	return nil
 }

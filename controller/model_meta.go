@@ -11,6 +11,7 @@ import (
 	"github.com/QuantumNous/new-api/model"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // GetAllModelsMeta 获取模型列表（分页）
@@ -153,6 +154,15 @@ func DeleteModelMeta(c *gin.Context) {
 		return
 	}
 	if err := model.DB.Delete(&model.Model{}, id).Error; err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	model.RefreshPricing()
+	common.ApiSuccess(c, nil)
+}
+
+func ClearAllModelsMeta(c *gin.Context) {
+	if err := model.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model.Model{}).Error; err != nil {
 		common.ApiError(c, err)
 		return
 	}

@@ -34,6 +34,7 @@ export const usePricingFilterCounts = ({
   models = [],
   filterGroup = 'all',
   filterQuotaType = 'all',
+  filterBillingType = 'all',
   filterEndpointType = 'all',
   filterVendor = 'all',
   filterTag = 'all',
@@ -58,6 +59,10 @@ export const usePricingFilterCounts = ({
     // 计费类型
     if (!ignore.includes('quota') && filterQuotaType !== 'all') {
       if (model.quota_type !== filterQuotaType) return false;
+    }
+
+    if (!ignore.includes('billing') && filterBillingType !== 'all') {
+      if ((model.billing_type ?? 0) !== filterBillingType) return false;
     }
 
     // 端点类型
@@ -110,6 +115,7 @@ export const usePricingFilterCounts = ({
       allModels,
       filterGroup,
       filterEndpointType,
+      filterBillingType,
       filterVendor,
       filterTag,
       searchValue,
@@ -122,6 +128,7 @@ export const usePricingFilterCounts = ({
       allModels,
       filterGroup,
       filterQuotaType,
+      filterBillingType,
       filterVendor,
       filterTag,
       searchValue,
@@ -135,6 +142,7 @@ export const usePricingFilterCounts = ({
       filterGroup,
       filterQuotaType,
       filterEndpointType,
+      filterBillingType,
       filterTag,
       searchValue,
     ],
@@ -148,6 +156,7 @@ export const usePricingFilterCounts = ({
       filterQuotaType,
       filterEndpointType,
       filterVendor,
+      filterBillingType,
       searchValue,
     ],
   );
@@ -158,6 +167,7 @@ export const usePricingFilterCounts = ({
       allModels,
       filterQuotaType,
       filterEndpointType,
+      filterBillingType,
       filterVendor,
       filterTag,
       searchValue,

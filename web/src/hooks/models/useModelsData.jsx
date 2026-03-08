@@ -408,6 +408,69 @@ export const useModelsData = () => {
     }
   };
 
+  const batchUpdateBillingType = async (billingType) => {
+    if (selectedKeys.length === 0) {
+      showError(t('请至少选择一个模型'));
+      return false;
+    }
+
+    try {
+      const updatePromises = selectedKeys.map((model) =>
+        API.put('/api/models/', {
+          ...model,
+          billing_type: billingType,
+        }),
+      );
+
+      const results = await Promise.all(updatePromises);
+      let successCount = 0;
+
+      results.forEach((res, index) => {
+        if (res.data.success) {
+          successCount++;
+        } else {
+          showError(
+            `${t('设置模型')} ${selectedKeys[index].model_name} ${t('收费状态失败')}: ${res.data.message}`,
+          );
+        }
+      });
+
+      if (successCount > 0) {
+        showSuccess(
+          t('成功将 {{count}} 个模型设为{{type}}', {
+            count: successCount,
+            type: billingType === 1 ? t('付费') : t('免费'),
+          }),
+        );
+        setSelectedKeys([]);
+        await refresh();
+      }
+
+      return successCount > 0;
+    } catch (error) {
+      showError(t('批量设置收费状态失败'));
+      return false;
+    }
+  };
+
+  const clearAllModels = async () => {
+    try {
+      const res = await API.delete('/api/models/');
+      const { success, message } = res.data;
+      if (!success) {
+        showError(message || t('清空模型失败'));
+        return false;
+      }
+      showSuccess(t('已清空全部模型配置'));
+      setSelectedKeys([]);
+      await refresh(1);
+      return true;
+    } catch (error) {
+      showError(t('清空模型失败'));
+      return false;
+    }
+  };
+
   // Copy text helper
   const copyText = async (text) => {
     try {
@@ -459,6 +522,8 @@ export const useModelsData = () => {
     refresh,
     manageModel,
     batchDeleteModels,
+    batchUpdateBillingType,
+    clearAllModels,
     copyText,
 
     // Pagination

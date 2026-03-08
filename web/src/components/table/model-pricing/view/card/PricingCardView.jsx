@@ -255,7 +255,7 @@ const PricingCardView = ({
               bodyStyle={{ height: '100%' }}
               onClick={() => openModelDetail && openModelDetail(model)}
             >
-              <div className='flex flex-col h-full'>
+              <div className='flex flex-col h-full relative'>
                 {/* 头部：图标 + 模型名称 + 操作按钮 */}
                 <div className='flex items-start justify-between mb-3'>
                   <div className='flex items-start space-x-3 flex-1 min-w-0'>

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useContext, useEffect, useState } from 'react';
 import {
   Button,
   Typography,
@@ -64,6 +64,7 @@ import {
 } from '@lobehub/icons';
 
 const { Text } = Typography;
+const HomeStatusPanel = lazy(() => import('../../components/home/HomeStatusPanel'));
 
 const Home = () => {
   const { t, i18n } = useTranslation();
@@ -330,6 +331,10 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
+
+	                <Suspense fallback={null}>
+	                  <HomeStatusPanel />
+	                </Suspense>
               </div>
             </div>
           </div>

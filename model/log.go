@@ -37,6 +37,7 @@ type Log struct {
 	Ip               string `json:"ip" gorm:"index;default:''"`
 	RequestId        string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
 	Other            string `json:"other"`
+	AvatarUrl        string `json:"avatar_url" gorm:"-"`
 }
 
 // don't use iota, avoid change log type value
@@ -284,9 +285,13 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 	}
 
 	channelIds := types.NewSet[int]()
+	userIds := types.NewSet[int]()
 	for _, log := range logs {
 		if log.ChannelId != 0 {
 			channelIds.Add(log.ChannelId)
+		}
+		if log.UserId != 0 {
+			userIds.Add(log.UserId)
 		}
 	}
 
@@ -320,6 +325,23 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 		}
 		for i := range logs {
 			logs[i].ChannelName = channelMap[logs[i].ChannelId]
+		}
+	}
+
+	if userIds.Len() > 0 {
+		var users []struct {
+			Id        int    `gorm:"column:id"`
+			AvatarUrl string `gorm:"column:avatar_url"`
+		}
+		if err = DB.Table("users").Select("id, avatar_url").Where("id IN ?", userIds.Items()).Find(&users).Error; err != nil {
+			return logs, total, err
+		}
+		userAvatarMap := make(map[int]string, len(users))
+		for _, user := range users {
+			userAvatarMap[user.Id] = user.AvatarUrl
+		}
+		for i := range logs {
+			logs[i].AvatarUrl = userAvatarMap[logs[i].UserId]
 		}
 	}
 

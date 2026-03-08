@@ -18,8 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Modal, Badge } from '@douyinfe/semi-ui';
-import { renderQuota, renderNumber } from '../../../../helpers';
+import { Modal, Badge, Avatar } from '@douyinfe/semi-ui';
+import { renderQuota, renderNumber, stringToColor } from '../../../../helpers';
 
 const UserInfoModal = ({
   showUserInfo,
@@ -78,6 +78,32 @@ const UserInfoModal = ({
     >
       {userInfoData && (
         <div style={{ padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            {userInfoData.avatar_url ? (
+              <Avatar size='large' src={userInfoData.avatar_url}>
+                {(userInfoData.display_name || userInfoData.username || 'NA')
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </Avatar>
+            ) : (
+              <Avatar
+                size='large'
+                color={stringToColor(userInfoData.username || 'NA')}
+              >
+                {(userInfoData.display_name || userInfoData.username || 'NA')
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </Avatar>
+            )}
+            <div>
+              <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                {userInfoData.display_name || userInfoData.username}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--semi-color-text-2)' }}>
+                @{userInfoData.username}
+              </div>
+            </div>
+          </div>
           {/* 基本信息 */}
           <div style={rowStyle}>
             <div style={colStyle}>

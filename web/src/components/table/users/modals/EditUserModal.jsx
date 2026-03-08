@@ -26,6 +26,8 @@ import {
   renderQuota,
   renderQuotaWithPrompt,
   getCurrencyConfig,
+  stringToColor,
+  timestamp2string,
 } from '../../../../helpers';
 import {
   quotaToDisplayAmount,
@@ -54,6 +56,7 @@ import {
   IconLink,
   IconUserGroup,
   IconPlus,
+  IconDelete,
 } from '@douyinfe/semi-icons';
 import UserBindingManagementModal from './UserBindingManagementModal';
 
@@ -69,6 +72,8 @@ const EditUserModal = (props) => {
   const isMobile = useIsMobile();
   const [groupOptions, setGroupOptions] = useState([]);
   const [bindingModalVisible, setBindingModalVisible] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [clearAvatar, setClearAvatar] = useState(false);
   const formApiRef = useRef(null);
 
   const isEdit = Boolean(userId);
@@ -84,6 +89,8 @@ const EditUserModal = (props) => {
     telegram_id: '',
     linux_do_id: '',
     email: '',
+    avatar_url: '',
+    profile_updated_at: 0,
     quota: 0,
     group: 'default',
     remark: '',
@@ -107,6 +114,8 @@ const EditUserModal = (props) => {
     const { success, message, data } = res.data;
     if (success) {
       data.password = '';
+      setAvatarFile(null);
+      setClearAvatar(false);
       formApiRef.current?.setValues({ ...getInitValues(), ...data });
     } else {
       showError(message);
@@ -131,9 +140,33 @@ const EditUserModal = (props) => {
   /* ----------------------- submit ----------------------- */
   const submit = async (values) => {
     setLoading(true);
+    let profileRes = null;
+    if (userId && (avatarFile?.fileInstance || clearAvatar)) {
+      const profileFormData = new FormData();
+      if (avatarFile?.fileInstance) {
+        profileFormData.append('avatar', avatarFile.fileInstance);
+      }
+      if (clearAvatar) {
+        profileFormData.append('avatar_action', 'remove');
+      }
+      profileFormData.append('display_name', values.display_name || '');
+      profileRes = await API.post(`/api/user/${userId}/profile`, profileFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      if (!profileRes.data.success) {
+        showError(profileRes.data.message);
+        setLoading(false);
+        return;
+      }
+    }
     let payload = { ...values };
-    if (typeof payload.quota === 'string')
-      payload.quota = parseInt(payload.quota) || 0;
+    if (profileRes) {
+      delete payload.avatar_url;
+      delete payload.profile_updated_at;
+    }
+    if (typeof payload.quota === 'string') payload.quota = parseInt(payload.quota) || 0;
     if (userId) {
       payload.id = parseInt(userId);
     }
@@ -230,6 +263,45 @@ const EditUserModal = (props) => {
 
                   <Row gutter={12}>
                     <Col span={24}>
+                      <div className='flex items-center gap-3 mb-3'>
+                        {avatarFile?.fileInstance ? (
+                          <Avatar
+                            size='medium'
+                            src={URL.createObjectURL(avatarFile.fileInstance)}
+                          >
+                            {(values.display_name || values.username || 'NA')
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </Avatar>
+                        ) : values.avatar_url ? (
+                          <Avatar size='medium' src={values.avatar_url}>
+                            {(values.display_name || values.username || 'NA')
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </Avatar>
+                        ) : (
+                          <Avatar
+                            size='medium'
+                            color={stringToColor(values.username || 'NA')}
+                          >
+                            {(values.display_name || values.username || 'NA')
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </Avatar>
+                        )}
+                        <div className='text-xs text-gray-600'>
+                          {values.profile_updated_at
+                            ? `${t('上次资料修改时间')}：${timestamp2string(values.profile_updated_at)}`
+                            : t('该用户尚未修改过头像或昵称')}
+                          {values.profile_updated_at ? (
+                            <div>
+                              {`${t('下次可修改时间')}：${timestamp2string(values.profile_updated_at + 7 * 24 * 60 * 60)}`}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col span={24}>
                       <Form.Input
                         field='username'
                         label={t('用户名')}
@@ -256,6 +328,43 @@ const EditUserModal = (props) => {
                         placeholder={t('请输入新的显示名称')}
                         showClear
                       />
+                    </Col>
+
+                    <Col span={24}>
+                      <Form.Upload
+                        field='avatar_file'
+                        label={t('头像文件')}
+                        accept='image/png,image/jpeg,image/gif,image/webp'
+                        uploadTrigger='custom'
+                        beforeUpload={() => false}
+                        maxSize={2 * 1024 * 1024}
+                        onChange={({ currentFile }) => {
+                          if (currentFile?.status === 'error') {
+                            return;
+                          }
+                          if (currentFile?.fileInstance) {
+                            setAvatarFile(currentFile);
+                            setClearAvatar(false);
+                          }
+                        }}
+                        fileList={avatarFile ? [avatarFile] : []}
+                        extraText={t('支持 JPG、PNG、GIF、WEBP，大小不超过 2MB')}
+                      />
+                    </Col>
+
+                    <Col span={24}>
+                      <Button
+                        icon={<IconDelete />}
+                        theme='light'
+                        type='tertiary'
+                        onClick={() => {
+                          setAvatarFile(null);
+                          setClearAvatar(true);
+                          formApiRef.current?.setValue('avatar_url', '');
+                        }}
+                      >
+                        {t('清除头像')}
+                      </Button>
                     </Col>
 
                     <Col span={24}>

@@ -22,6 +22,7 @@ import { Card, Spin, Button, Modal } from '@douyinfe/semi-ui';
 import { API, showError, showSuccess, toBoolean } from '../../helpers';
 import SettingsAPIInfo from '../../pages/Setting/Dashboard/SettingsAPIInfo';
 import SettingsAnnouncements from '../../pages/Setting/Dashboard/SettingsAnnouncements';
+import SettingsMaintenance from '../../pages/Setting/Dashboard/SettingsMaintenance';
 import SettingsFAQ from '../../pages/Setting/Dashboard/SettingsFAQ';
 import SettingsUptimeKuma from '../../pages/Setting/Dashboard/SettingsUptimeKuma';
 import SettingsDataDashboard from '../../pages/Setting/Dashboard/SettingsDataDashboard';
@@ -36,6 +37,14 @@ const DashboardSetting = () => {
     'console_setting.announcements_enabled': '',
     'console_setting.faq_enabled': '',
     'console_setting.uptime_kuma_enabled': '',
+    MaintenanceModeEnabled: false,
+    MaintenanceAdminBypassEnabled: true,
+    MaintenancePageTitle: '',
+    MaintenancePageContent: '',
+    MaintenanceCountdownTarget: '',
+    MaintenanceEstimatedCompletionTime: '',
+    MaintenanceIframeURL: '',
+    MaintenancePageMode: 'default',
 
     // 用于迁移检测的旧键，下个版本会删除
     ApiInfo: '',
@@ -62,7 +71,12 @@ const DashboardSetting = () => {
         if (item.key in inputs) {
           newInputs[item.key] = item.value;
         }
-        if (item.key.endsWith('Enabled') && item.key === 'DataExportEnabled') {
+        if (
+          item.key.endsWith('Enabled') &&
+          (item.key === 'DataExportEnabled' ||
+            item.key === 'MaintenanceModeEnabled' ||
+            item.key === 'MaintenanceAdminBypassEnabled')
+        ) {
           newInputs[item.key] = toBoolean(item.value);
         }
       });
@@ -147,6 +161,10 @@ const DashboardSetting = () => {
         </Card>
 
         {/* 系统公告管理 */}
+        <Card style={{ marginTop: '10px' }}>
+          <SettingsMaintenance options={inputs} refresh={onRefresh} />
+        </Card>
+
         <Card style={{ marginTop: '10px' }}>
           <SettingsAnnouncements options={inputs} refresh={onRefresh} />
         </Card>

@@ -161,6 +161,21 @@ const renderQuotaTypes = (arr, t) => {
   });
 };
 
+const renderBillingType = (value, t) => {
+  if (value === 1) {
+    return (
+      <Tag color='red' size='small' shape='circle'>
+        {t('付费')}
+      </Tag>
+    );
+  }
+  return (
+    <Tag color='green' size='small' shape='circle'>
+      {t('免费')}
+    </Tag>
+  );
+};
+
 // Render bound channels
 const renderBoundChannels = (channels) => {
   if (!channels || channels.length === 0) return '-';
@@ -326,6 +341,11 @@ export const getModelsColumns = ({
       title: t('标签'),
       dataIndex: 'tags',
       render: renderTags,
+    },
+    {
+      title: t('收费状态'),
+      dataIndex: 'billing_type',
+      render: (value) => renderBillingType(value, t),
     },
     {
       title: t('端点'),

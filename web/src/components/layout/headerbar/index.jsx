@@ -26,6 +26,9 @@ import MobileMenuButton from './MobileMenuButton';
 import HeaderLogo from './HeaderLogo';
 import Navigation from './Navigation';
 import ActionButtons from './ActionButtons';
+import MaintenanceCountdownBanner, {
+  getActiveMaintenanceAnnouncement,
+} from '../../common/MaintenanceCountdownBanner';
 
 const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
   const {
@@ -63,6 +66,9 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
   } = useNotifications(statusState);
 
   const { mainNavLinks } = useNavigation(t, docsLink, headerNavModules);
+  const maintenanceAnnouncement = getActiveMaintenanceAnnouncement(
+    statusState?.status?.announcements || [],
+  );
 
   return (
     <header className='text-semi-color-text-0 sticky top-0 z-50 transition-colors duration-300 bg-white/75 dark:bg-zinc-900/75 backdrop-blur-lg'>
@@ -105,6 +111,8 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
             isLoading={isLoading}
             userState={userState}
             pricingRequireAuth={pricingRequireAuth}
+            maintenanceAnnouncement={maintenanceAnnouncement}
+            t={t}
           />
 
           <ActionButtons
@@ -125,6 +133,13 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
           />
         </div>
       </div>
+      {maintenanceAnnouncement && isMobile && (
+        <MaintenanceCountdownBanner
+          announcement={maintenanceAnnouncement}
+          t={t}
+          compact
+        />
+      )}
     </header>
   );
 };

@@ -441,18 +441,32 @@ export const getLogsColumns = ({
       dataIndex: 'username',
       render: (text, record, index) => {
         return isAdminUser ? (
-          <div>
-            <Avatar
-              size='extra-small'
-              color={stringToColor(text)}
-              style={{ marginRight: 4 }}
-              onClick={(event) => {
-                event.stopPropagation();
-                showUserInfoFunc(record.user_id);
-              }}
-            >
-              {typeof text === 'string' && text.slice(0, 1)}
-            </Avatar>
+          <div className='flex items-center gap-1'>
+            {record.avatar_url ? (
+              <Avatar
+                size='extra-small'
+                src={record.avatar_url}
+                style={{ marginRight: 4 }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  showUserInfoFunc(record.user_id);
+                }}
+              >
+                {typeof text === 'string' && text.slice(0, 1)}
+              </Avatar>
+            ) : (
+              <Avatar
+                size='extra-small'
+                color={stringToColor(text)}
+                style={{ marginRight: 4 }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  showUserInfoFunc(record.user_id);
+                }}
+              >
+                {typeof text === 'string' && text.slice(0, 1)}
+              </Avatar>
+            )}
             {text}
           </div>
         ) : (

@@ -771,6 +771,7 @@ const DEFAULT_PRICING_FILTERS = {
   tokenUnit: 'M',
   filterGroup: 'all',
   filterQuotaType: 'all',
+  filterBillingType: 'all',
   filterEndpointType: 'all',
   filterVendor: 'all',
   filterTag: 'all',
@@ -786,6 +787,7 @@ export const resetPricingFilters = ({
   setViewMode,
   setFilterGroup,
   setFilterQuotaType,
+  setFilterBillingType,
   setFilterEndpointType,
   setFilterVendor,
   setFilterTag,
@@ -800,6 +802,7 @@ export const resetPricingFilters = ({
   setTokenUnit?.(DEFAULT_PRICING_FILTERS.tokenUnit);
   setFilterGroup?.(DEFAULT_PRICING_FILTERS.filterGroup);
   setFilterQuotaType?.(DEFAULT_PRICING_FILTERS.filterQuotaType);
+  setFilterBillingType?.(DEFAULT_PRICING_FILTERS.filterBillingType);
   setFilterEndpointType?.(DEFAULT_PRICING_FILTERS.filterEndpointType);
   setFilterVendor?.(DEFAULT_PRICING_FILTERS.filterVendor);
   setFilterTag?.(DEFAULT_PRICING_FILTERS.filterTag);

@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Button } from '@douyinfe/semi-ui';
+import PricingBillingTypes from '../filter/PricingBillingTypes';
 import PricingGroups from '../filter/PricingGroups';
 import PricingQuotaTypes from '../filter/PricingQuotaTypes';
 import PricingEndpointTypes from '../filter/PricingEndpointTypes';
@@ -44,6 +45,8 @@ const PricingSidebar = ({
   handleGroupClick,
   filterQuotaType,
   setFilterQuotaType,
+  filterBillingType,
+  setFilterBillingType,
   filterEndpointType,
   setFilterEndpointType,
   filterVendor,
@@ -68,6 +71,7 @@ const PricingSidebar = ({
     models: categoryProps.models,
     filterGroup,
     filterQuotaType,
+    filterBillingType,
     filterEndpointType,
     filterVendor,
     filterTag,
@@ -83,6 +87,7 @@ const PricingSidebar = ({
       setViewMode,
       setFilterGroup,
       setFilterQuotaType,
+      setFilterBillingType,
       setFilterEndpointType,
       setFilterVendor,
       setFilterTag,
@@ -136,6 +141,14 @@ const PricingSidebar = ({
         filterQuotaType={filterQuotaType}
         setFilterQuotaType={setFilterQuotaType}
         models={quotaTypeModels}
+        loading={loading}
+        t={t}
+      />
+
+      <PricingBillingTypes
+        filterBillingType={filterBillingType}
+        setFilterBillingType={setFilterBillingType}
+        models={categoryProps.models}
         loading={loading}
         t={t}
       />

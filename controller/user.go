@@ -4,11 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
@@ -22,11 +29,185 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/image/draw"
+	_ "golang.org/x/image/webp"
 )
 
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+const profileUpdateInterval = 7 * 24 * time.Hour
+
+func isFieldUpdateAllowed(lastUpdatedAt int64, fieldLabel string) error {
+	if lastUpdatedAt <= 0 {
+		return nil
+	}
+	nextAllowedAt := time.Unix(lastUpdatedAt, 0).Add(profileUpdateInterval)
+	if time.Now().Before(nextAllowedAt) {
+		return fmt.Errorf("%s每 7 天只能修改一次，请于 %s 后重试", fieldLabel, nextAllowedAt.Format("2006-01-02 15:04:05"))
+	}
+	return nil
+}
+
+func cropAvatarToSquare(src image.Image) image.Image {
+	bounds := src.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+	size := width
+	if height < size {
+		size = height
+	}
+	offsetX := bounds.Min.X + (width-size)/2
+	offsetY := bounds.Min.Y + (height-size)/2
+	dst := image.NewRGBA(image.Rect(0, 0, 256, 256))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), src, image.Rect(offsetX, offsetY, offsetX+size, offsetY+size), draw.Over, nil)
+	return dst
+}
+
+func deleteAvatarFile(avatarURL string) {
+	if avatarURL == "" || !strings.HasPrefix(avatarURL, "/uploads/avatars/") {
+		return
+	}
+	localPath := filepath.Join("uploads", "avatars", filepath.Base(strings.TrimSpace(avatarURL)))
+	if err := os.Remove(localPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+		common.SysError("failed to remove old avatar file: " + err.Error())
+	}
+}
+
+func saveUploadedProfileAvatar(fileHeader *multipart.FileHeader, userId int) (string, error) {
+	if fileHeader.Size <= 0 {
+		return "", errors.New("头像文件为空")
+	}
+	if fileHeader.Size > 8*1024*1024 {
+		return "", errors.New("头像原始文件不能超过 8MB")
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	head := make([]byte, 512)
+	n, err := file.Read(head)
+	if err != nil && err != io.EOF {
+		return "", err
+	}
+	contentType := http.DetectContentType(head[:n])
+	allowedTypes := map[string]struct{}{
+		"image/jpeg": {},
+		"image/png":  {},
+		"image/gif":  {},
+		"image/webp": {},
+	}
+	_, ok := allowedTypes[contentType]
+	if !ok {
+		return "", errors.New("仅支持 JPG、PNG、GIF、WEBP 格式头像")
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
+	decodedImage, _, err := image.Decode(file)
+	if err != nil {
+		return "", errors.New("头像文件解析失败")
+	}
+	processedAvatar := cropAvatarToSquare(decodedImage)
+
+	uploadDir := filepath.Join("uploads", "avatars")
+	if err := os.MkdirAll(uploadDir, 0o755); err != nil {
+		return "", err
+	}
+	filename := fmt.Sprintf("user_%d_%s.jpg", userId, common.GetUUID())
+	fullPath := filepath.Join(uploadDir, filename)
+	out, err := os.Create(fullPath)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+	if err := jpeg.Encode(out, processedAvatar, &jpeg.Options{Quality: 82}); err != nil {
+		return "", err
+	}
+	return "/uploads/avatars/" + filename, nil
+}
+
+func updateProfileForUser(c *gin.Context, userId int, enforceInterval bool) {
+	currentUser, err := model.GetUserById(userId, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	displayName := strings.TrimSpace(c.PostForm("display_name"))
+	if displayName == "" {
+		displayName = currentUser.DisplayName
+	}
+	avatarAction := strings.TrimSpace(c.PostForm("avatar_action"))
+	avatarUrl := currentUser.AvatarUrl
+	avatarChanged := false
+	if avatarAction == "remove" {
+		avatarUrl = ""
+		avatarChanged = avatarUrl != currentUser.AvatarUrl
+	} else if fileHeader, err := c.FormFile("avatar"); err == nil && fileHeader != nil {
+		savedAvatarURL, saveErr := saveUploadedProfileAvatar(fileHeader, userId)
+		if saveErr != nil {
+			common.ApiError(c, saveErr)
+			return
+		}
+		avatarUrl = savedAvatarURL
+		avatarChanged = avatarUrl != currentUser.AvatarUrl
+	}
+	displayNameChanged := displayName != currentUser.DisplayName
+	profileChanged := displayNameChanged || avatarChanged
+	if !profileChanged {
+		common.ApiSuccess(c, nil)
+		return
+	}
+	if enforceInterval {
+		if displayNameChanged {
+			if err := isFieldUpdateAllowed(currentUser.DisplayNameUpdatedAt, "昵称"); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+		}
+		if avatarChanged {
+			if err := isFieldUpdateAllowed(currentUser.AvatarUpdatedAt, "头像"); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+		}
+	}
+
+	nowTs := time.Now().Unix()
+	cleanUser := model.User{
+		Id:                   userId,
+		DisplayName:          displayName,
+		AvatarUrl:            avatarUrl,
+		ProfileUpdatedAt:     nowTs,
+		DisplayNameUpdatedAt: currentUser.DisplayNameUpdatedAt,
+		AvatarUpdatedAt:      currentUser.AvatarUpdatedAt,
+	}
+	if displayNameChanged {
+		cleanUser.DisplayNameUpdatedAt = nowTs
+	}
+	if avatarChanged {
+		cleanUser.AvatarUpdatedAt = nowTs
+	}
+	if err := cleanUser.UpdateProfile(false, displayNameChanged, avatarChanged); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if avatarChanged && currentUser.AvatarUrl != "" && currentUser.AvatarUrl != avatarUrl {
+		deleteAvatarFile(currentUser.AvatarUrl)
+	}
+	common.ApiSuccess(c, gin.H{
+		"avatar_url":              avatarUrl,
+		"display_name":            displayName,
+		"profile_updated_at":      cleanUser.ProfileUpdatedAt,
+		"display_name_updated_at": cleanUser.DisplayNameUpdatedAt,
+		"avatar_updated_at":       cleanUser.AvatarUpdatedAt,
+	})
 }
 
 func Login(c *gin.Context) {
@@ -104,6 +285,7 @@ func setupLogin(user *model.User, c *gin.Context) {
 			"id":           user.Id,
 			"username":     user.Username,
 			"display_name": user.DisplayName,
+			"avatar_url":   user.AvatarUrl,
 			"role":         user.Role,
 			"status":       user.Status,
 			"group":        user.Group,
@@ -384,31 +566,35 @@ func GetSelf(c *gin.Context) {
 
 	// 构建响应数据，包含用户信息和权限
 	responseData := map[string]interface{}{
-		"id":                user.Id,
-		"username":          user.Username,
-		"display_name":      user.DisplayName,
-		"role":              user.Role,
-		"status":            user.Status,
-		"email":             user.Email,
-		"github_id":         user.GitHubId,
-		"discord_id":        user.DiscordId,
-		"oidc_id":           user.OidcId,
-		"wechat_id":         user.WeChatId,
-		"telegram_id":       user.TelegramId,
-		"group":             user.Group,
-		"quota":             user.Quota,
-		"used_quota":        user.UsedQuota,
-		"request_count":     user.RequestCount,
-		"aff_code":          user.AffCode,
-		"aff_count":         user.AffCount,
-		"aff_quota":         user.AffQuota,
-		"aff_history_quota": user.AffHistoryQuota,
-		"inviter_id":        user.InviterId,
-		"linux_do_id":       user.LinuxDOId,
-		"setting":           user.Setting,
-		"stripe_customer":   user.StripeCustomer,
-		"sidebar_modules":   userSetting.SidebarModules, // 正确提取sidebar_modules字段
-		"permissions":       permissions,                // 新增权限字段
+		"id":                      user.Id,
+		"username":                user.Username,
+		"display_name":            user.DisplayName,
+		"avatar_url":              user.AvatarUrl,
+		"profile_updated_at":      user.ProfileUpdatedAt,
+		"display_name_updated_at": user.DisplayNameUpdatedAt,
+		"avatar_updated_at":       user.AvatarUpdatedAt,
+		"role":                    user.Role,
+		"status":                  user.Status,
+		"email":                   user.Email,
+		"github_id":               user.GitHubId,
+		"discord_id":              user.DiscordId,
+		"oidc_id":                 user.OidcId,
+		"wechat_id":               user.WeChatId,
+		"telegram_id":             user.TelegramId,
+		"group":                   user.Group,
+		"quota":                   user.Quota,
+		"used_quota":              user.UsedQuota,
+		"request_count":           user.RequestCount,
+		"aff_code":                user.AffCode,
+		"aff_count":               user.AffCount,
+		"aff_quota":               user.AffQuota,
+		"aff_history_quota":       user.AffHistoryQuota,
+		"inviter_id":              user.InviterId,
+		"linux_do_id":             user.LinuxDOId,
+		"setting":                 user.Setting,
+		"stripe_customer":         user.StripeCustomer,
+		"sidebar_modules":         userSetting.SidebarModules, // 正确提取sidebar_modules字段
+		"permissions":             permissions,                // 新增权限字段
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -706,21 +892,50 @@ func UpdateSelf(c *gin.Context) {
 	}
 
 	cleanUser := model.User{
-		Id:          c.GetInt("id"),
-		Username:    user.Username,
-		Password:    user.Password,
-		DisplayName: user.DisplayName,
+		Id:               c.GetInt("id"),
+		Password:         user.Password,
+		DisplayName:      strings.TrimSpace(user.DisplayName),
+		AvatarUrl:        strings.TrimSpace(user.AvatarUrl),
+		ProfileUpdatedAt: user.ProfileUpdatedAt,
 	}
 	if user.Password == "$I_LOVE_U" {
 		user.Password = "" // rollback to what it should be
 		cleanUser.Password = ""
+	}
+	currentUser, err := model.GetUserById(cleanUser.Id, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if cleanUser.DisplayName == "" {
+		cleanUser.DisplayName = currentUser.DisplayName
+	}
+	if cleanUser.AvatarUrl == "" {
+		cleanUser.AvatarUrl = currentUser.AvatarUrl
+	}
+	displayNameChanged := cleanUser.DisplayName != currentUser.DisplayName
+	avatarChanged := cleanUser.AvatarUrl != currentUser.AvatarUrl
+	profileChanged := displayNameChanged || avatarChanged
+	nowTs := time.Now().Unix()
+	if profileChanged {
+		cleanUser.ProfileUpdatedAt = nowTs
+	} else {
+		cleanUser.ProfileUpdatedAt = currentUser.ProfileUpdatedAt
+	}
+	cleanUser.DisplayNameUpdatedAt = currentUser.DisplayNameUpdatedAt
+	cleanUser.AvatarUpdatedAt = currentUser.AvatarUpdatedAt
+	if displayNameChanged {
+		cleanUser.DisplayNameUpdatedAt = nowTs
+	}
+	if avatarChanged {
+		cleanUser.AvatarUpdatedAt = nowTs
 	}
 	updatePassword, err := checkUpdatePassword(user.OriginalPassword, user.Password, cleanUser.Id)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	if err := cleanUser.Update(updatePassword); err != nil {
+	if err := cleanUser.UpdateProfile(updatePassword, displayNameChanged, avatarChanged); err != nil {
 		common.ApiError(c, err)
 		return
 	}
@@ -730,6 +945,29 @@ func UpdateSelf(c *gin.Context) {
 		"message": "",
 	})
 	return
+}
+
+func UpdateSelfProfile(c *gin.Context) {
+	updateProfileForUser(c, c.GetInt("id"), true)
+}
+
+func UpdateUserProfile(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	originUser, err := model.GetUserById(id, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	myRole := c.GetInt("role")
+	if myRole <= originUser.Role && myRole != common.RoleRootUser {
+		common.ApiErrorI18n(c, i18n.MsgUserNoPermissionHigherLevel)
+		return
+	}
+	updateProfileForUser(c, id, false)
 }
 
 func checkUpdatePassword(originalPassword string, newPassword string, userId int) (updatePassword bool, err error) {

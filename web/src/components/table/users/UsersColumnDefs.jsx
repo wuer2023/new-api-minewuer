@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import {
+  Avatar,
   Button,
   Space,
   Tag,
@@ -29,7 +30,7 @@ import {
   Dropdown,
 } from '@douyinfe/semi-ui';
 import { IconMore } from '@douyinfe/semi-icons';
-import { renderGroup, renderNumber, renderQuota } from '../../../helpers';
+import { renderGroup, renderNumber, renderQuota, stringToColor } from '../../../helpers';
 
 /**
  * Render user role
@@ -68,14 +69,29 @@ const renderRole = (role, t) => {
  */
 const renderUsername = (text, record) => {
   const remark = record.remark;
+  const avatarNode = record.avatar_url ? (
+    <Avatar size='small' src={record.avatar_url}>
+      {(record.display_name || text || 'NA').slice(0, 2).toUpperCase()}
+    </Avatar>
+  ) : (
+    <Avatar size='small' color={stringToColor(text || 'NA')}>
+      {(record.display_name || text || 'NA').slice(0, 2).toUpperCase()}
+    </Avatar>
+  );
   if (!remark) {
-    return <span>{text}</span>;
+    return (
+      <Space spacing={8}>
+        {avatarNode}
+        <span>{text}</span>
+      </Space>
+    );
   }
   const maxLen = 10;
   const displayRemark =
     remark.length > maxLen ? remark.slice(0, maxLen) + '…' : remark;
   return (
     <Space spacing={2}>
+      {avatarNode}
       <span>{text}</span>
       <Tooltip content={remark} position='top' showArrow>
         <Tag color='white' shape='circle' className='!text-xs'>

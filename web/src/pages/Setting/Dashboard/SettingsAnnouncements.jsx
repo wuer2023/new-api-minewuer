@@ -65,6 +65,10 @@ const SettingsAnnouncements = ({ options, refresh }) => {
     publishDate: new Date(),
     type: 'default',
     extra: '',
+    maintenanceEnabled: false,
+    countdownTitle: '',
+    countdownTarget: null,
+    estimatedCompletionTime: null,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -168,6 +172,34 @@ const SettingsAnnouncements = ({ options, refresh }) => {
       ),
     },
     {
+      title: t('维护倒计时'),
+      dataIndex: 'maintenanceEnabled',
+      key: 'maintenanceEnabled',
+      width: 180,
+      render: (enabled, record) =>
+        enabled ? (
+          <div>
+            <Tag color='red' shape='circle'>
+              {t('已启用')}
+            </Tag>
+            <div className='text-xs text-gray-500 mt-1'>
+              {record.countdownTarget
+                ? formatDateTimeString(new Date(record.countdownTarget))
+                : '-'}
+            </div>
+            <div className='text-xs text-gray-500'>
+              {record.estimatedCompletionTime
+                ? `${t('预计完成')}：${formatDateTimeString(new Date(record.estimatedCompletionTime))}`
+                : ''}
+            </div>
+          </div>
+        ) : (
+          <Tag color='grey' shape='circle'>
+            {t('未启用')}
+          </Tag>
+        ),
+    },
+    {
       title: t('操作'),
       key: 'action',
       fixed: 'right',
@@ -232,6 +264,10 @@ const SettingsAnnouncements = ({ options, refresh }) => {
       publishDate: new Date(),
       type: 'default',
       extra: '',
+      maintenanceEnabled: false,
+      countdownTitle: '',
+      countdownTarget: null,
+      estimatedCompletionTime: null,
     });
     setShowAnnouncementModal(true);
   };
@@ -245,6 +281,14 @@ const SettingsAnnouncements = ({ options, refresh }) => {
         : new Date(),
       type: announcement.type || 'default',
       extra: announcement.extra || '',
+      maintenanceEnabled: !!announcement.maintenanceEnabled,
+      countdownTitle: announcement.countdownTitle || '',
+      countdownTarget: announcement.countdownTarget
+        ? new Date(announcement.countdownTarget)
+        : null,
+      estimatedCompletionTime: announcement.estimatedCompletionTime
+        ? new Date(announcement.estimatedCompletionTime)
+        : null,
     });
     setShowAnnouncementModal(true);
   };
@@ -280,6 +324,12 @@ const SettingsAnnouncements = ({ options, refresh }) => {
       const formData = {
         ...announcementForm,
         publishDate: announcementForm.publishDate.toISOString(),
+        countdownTarget: announcementForm.countdownTarget
+          ? announcementForm.countdownTarget.toISOString()
+          : null,
+        estimatedCompletionTime: announcementForm.estimatedCompletionTime
+          ? announcementForm.estimatedCompletionTime.toISOString()
+          : null,
       };
 
       let newList;
@@ -578,6 +628,73 @@ const SettingsAnnouncements = ({ options, refresh }) => {
               setAnnouncementForm({ ...announcementForm, extra: value })
             }
           />
+          <div className='mb-4'>
+            <div className='semi-form-field-label mb-2'>
+              <div className='semi-form-field-label-text'>
+                {t('启用维护倒计时')}
+              </div>
+            </div>
+            <div className='flex items-center gap-3'>
+              <Button
+                id='maintenanceEnabled'
+                theme={announcementForm.maintenanceEnabled ? 'solid' : 'light'}
+                type={announcementForm.maintenanceEnabled ? 'danger' : 'tertiary'}
+                onClick={() =>
+                  setAnnouncementForm({
+                    ...announcementForm,
+                    maintenanceEnabled: !announcementForm.maintenanceEnabled,
+                  })
+                }
+              >
+                {announcementForm.maintenanceEnabled ? t('已开启') : t('已关闭')}
+              </Button>
+              <Text type='tertiary'>
+                {announcementForm.maintenanceEnabled
+                  ? t('当前公告会显示维护倒计时')
+                  : t('当前公告不会显示维护倒计时')}
+              </Text>
+            </div>
+          </div>
+          {announcementForm.maintenanceEnabled && (
+            <>
+              <Form.Input
+                field='countdownTitle'
+                label={t('倒计时标题')}
+                placeholder={t('例如：系统维护倒计时')}
+                maxLength={80}
+                onChange={(value) =>
+                  setAnnouncementForm({
+                    ...announcementForm,
+                    countdownTitle: value,
+                  })
+                }
+              />
+              <Form.DatePicker
+                field='countdownTarget'
+                label={t('倒计时目标时间')}
+                type='dateTime'
+                inputReadOnly={true}
+                onChange={(value) =>
+                  setAnnouncementForm({
+                    ...announcementForm,
+                    countdownTarget: value,
+                  })
+                }
+              />
+              <Form.DatePicker
+                field='estimatedCompletionTime'
+                label={t('预计完成时间')}
+                type='dateTime'
+                inputReadOnly={true}
+                onChange={(value) =>
+                  setAnnouncementForm({
+                    ...announcementForm,
+                    estimatedCompletionTime: value,
+                  })
+                }
+              />
+            </>
+          )}
         </Form>
       </Modal>
 

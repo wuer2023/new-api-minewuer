@@ -17,10 +17,12 @@ func SetApiRouter(router *gin.Engine) {
 	apiRouter.Use(gzip.Gzip(gzip.DefaultCompression))
 	apiRouter.Use(middleware.BodyStorageCleanup()) // 清理请求体存储
 	apiRouter.Use(middleware.GlobalAPIRateLimit())
+	apiRouter.Use(middleware.MaintenanceModeAPI())
 	{
 		apiRouter.GET("/setup", controller.GetSetup)
 		apiRouter.POST("/setup", controller.PostSetup)
 		apiRouter.GET("/status", controller.GetStatus)
+		apiRouter.GET("/home/status", controller.GetHomeStatus)
 		apiRouter.GET("/uptime/status", controller.GetUptimeKumaStatus)
 		apiRouter.GET("/models", middleware.UserAuth(), controller.DashboardListModels)
 		apiRouter.GET("/status/test", middleware.AdminAuth(), controller.TestStatus)
@@ -71,6 +73,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.GET("/self/groups", controller.GetUserGroups)
 				selfRoute.GET("/self", controller.GetSelf)
 				selfRoute.GET("/models", controller.GetUserModels)
+				selfRoute.POST("/self/profile", controller.UpdateSelfProfile)
 				selfRoute.PUT("/self", controller.UpdateSelf)
 				selfRoute.DELETE("/self", controller.DeleteSelf)
 				selfRoute.GET("/token", controller.GenerateAccessToken)
@@ -119,6 +122,7 @@ func SetApiRouter(router *gin.Engine) {
 				adminRoute.DELETE("/:id/oauth/bindings/:provider_id", controller.UnbindCustomOAuthByAdmin)
 				adminRoute.DELETE("/:id/bindings/:binding_type", controller.AdminClearUserBinding)
 				adminRoute.GET("/:id", controller.GetUser)
+				adminRoute.POST("/:id/profile", controller.UpdateUserProfile)
 				adminRoute.POST("/", controller.CreateUser)
 				adminRoute.POST("/manage", controller.ManageUser)
 				adminRoute.PUT("/", controller.UpdateUser)
@@ -336,6 +340,7 @@ func SetApiRouter(router *gin.Engine) {
 			modelsRoute.GET("/:id", controller.GetModelMeta)
 			modelsRoute.POST("/", controller.CreateModelMeta)
 			modelsRoute.PUT("/", controller.UpdateModelMeta)
+			modelsRoute.DELETE("/", controller.ClearAllModelsMeta)
 			modelsRoute.DELETE("/:id", controller.DeleteModelMeta)
 		}
 

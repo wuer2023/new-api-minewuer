@@ -308,9 +308,9 @@ const OtherSetting = () => {
         }
       });
       setInputs(newInputs);
-      formAPISettingGeneral.current.setValues(newInputs);
+      formAPISettingGeneral.current?.setValues(newInputs);
       formAPISettingLegal.current?.setValues(newInputs);
-      formAPIPersonalization.current.setValues(newInputs);
+      formAPIPersonalization.current?.setValues(newInputs);
     } else {
       showError(message);
     }
