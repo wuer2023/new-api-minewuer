@@ -34,6 +34,7 @@ import {
   CreditCard,
   Server,
   Activity,
+  Monitor,
 } from 'lucide-react';
 
 import SystemSetting from '../../components/settings/SystemSetting';
@@ -49,6 +50,7 @@ import DrawingSetting from '../../components/settings/DrawingSetting';
 import PaymentSetting from '../../components/settings/PaymentSetting';
 import ModelDeploymentSetting from '../../components/settings/ModelDeploymentSetting';
 import PerformanceSetting from '../../components/settings/PerformanceSetting';
+import MonitorSetting from '../../components/settings/MonitorSetting';
 
 const Setting = () => {
   const { t } = useTranslation();
@@ -157,6 +159,16 @@ const Setting = () => {
       ),
       content: <PerformanceSetting />,
       itemKey: 'performance',
+    });
+    panes.push({
+      tab: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Monitor size={18} />
+          {t('测活设置')}
+        </span>
+      ),
+      content: <MonitorSetting />,
+      itemKey: 'monitor',
     });
     panes.push({
       tab: (

@@ -192,20 +192,35 @@ func validateAnnouncements(announcementsStr string) error {
 		}
 		if countdownTarget, exists := ann["countdownTarget"]; exists {
 			countdownTargetStr, ok := countdownTarget.(string)
-			if !ok || countdownTargetStr == "" {
-				return fmt.Errorf("第%d个公告的维护倒计时时间不能为空", i+1)
-			}
-			if _, err := time.Parse(time.RFC3339, countdownTargetStr); err != nil {
-				return fmt.Errorf("第%d个公告的维护倒计时时间格式错误", i+1)
+			if !ok {
+				// 如果字段存在但不是字符串，或者为空（如果业务允许为空），根据需要处理
+				// 这里假设如果 maintenanceEnabled 为 false，则不需要校验
+				// 但由于 validateAnnouncements 只是遍历列表，不知道上下文中的 maintenanceEnabled 状态（虽然它在 map 中）
+				// 让我们检查一下 enabled 状态
+				enabled := false
+				if e, ok := ann["maintenanceEnabled"]; ok {
+					if b, ok := e.(bool); ok {
+						enabled = b
+					}
+				}
+				
+				if enabled && countdownTarget == nil {
+                     // 如果启用了维护，且时间为空，可能需要报错？
+                     // 但用户希望可以为空，所以这里放宽限制
+				}
+			} else if countdownTargetStr != "" {
+				if _, err := time.Parse(time.RFC3339, countdownTargetStr); err != nil {
+					return fmt.Errorf("第%d个公告的维护倒计时时间格式错误", i+1)
+				}
 			}
 		}
 		if estimatedCompletionTime, exists := ann["estimatedCompletionTime"]; exists {
 			estimatedCompletionTimeStr, ok := estimatedCompletionTime.(string)
-			if !ok || estimatedCompletionTimeStr == "" {
-				return fmt.Errorf("第%d个公告的预计完成时间不能为空", i+1)
-			}
-			if _, err := time.Parse(time.RFC3339, estimatedCompletionTimeStr); err != nil {
-				return fmt.Errorf("第%d个公告的预计完成时间格式错误", i+1)
+             // 同上，放宽非空校验
+			if ok && estimatedCompletionTimeStr != "" {
+				if _, err := time.Parse(time.RFC3339, estimatedCompletionTimeStr); err != nil {
+					return fmt.Errorf("第%d个公告的预计完成时间格式错误", i+1)
+				}
 			}
 		}
 	}

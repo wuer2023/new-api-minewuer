@@ -662,6 +662,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
                 label={t('倒计时标题')}
                 placeholder={t('例如：系统维护倒计时')}
                 maxLength={80}
+                initValue={announcementForm.countdownTitle}
                 onChange={(value) =>
                   setAnnouncementForm({
                     ...announcementForm,
@@ -673,7 +674,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
                 field='countdownTarget'
                 label={t('倒计时目标时间')}
                 type='dateTime'
-                inputReadOnly={true}
+                initValue={announcementForm.countdownTarget}
                 onChange={(value) =>
                   setAnnouncementForm({
                     ...announcementForm,
@@ -685,7 +686,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
                 field='estimatedCompletionTime'
                 label={t('预计完成时间')}
                 type='dateTime'
-                inputReadOnly={true}
+                initValue={announcementForm.estimatedCompletionTime}
                 onChange={(value) =>
                   setAnnouncementForm({
                     ...announcementForm,

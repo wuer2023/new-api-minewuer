@@ -298,17 +298,17 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	}
 	ti := &relaycommon.TaskInfo{}
 	if op.Error.Message != "" {
-		ti.Status = model.TaskStatusFailure
+		ti.Status = string(model.TaskStatusFailure)
 		ti.Reason = op.Error.Message
 		ti.Progress = "100%"
 		return ti, nil
 	}
 	if !op.Done {
-		ti.Status = model.TaskStatusInProgress
+		ti.Status = string(model.TaskStatusInProgress)
 		ti.Progress = "50%"
 		return ti, nil
 	}
-	ti.Status = model.TaskStatusSuccess
+	ti.Status = string(model.TaskStatusSuccess)
 	ti.Progress = "100%"
 	if len(op.Response.Videos) > 0 {
 		v0 := op.Response.Videos[0]

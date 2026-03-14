@@ -50,6 +50,7 @@ export default function GeneralSettings(props) {
     'general_setting.custom_currency_symbol': '¤',
     'general_setting.custom_currency_exchange_rate': '',
     QuotaPerUnit: '',
+    TopupRatio: '',
     RetryTimes: '',
     USDExchangeRate: '',
     DisplayTokenStatEnabled: false,
@@ -127,9 +128,9 @@ export default function GeneralSettings(props) {
   };
 
   useEffect(() => {
-    const currentInputs = {};
+    let currentInputs = { ...inputs };
     for (let key in props.options) {
-      if (Object.keys(inputs).includes(key)) {
+      if (Object.keys(currentInputs).includes(key)) {
         currentInputs[key] = props.options[key];
       }
     }
@@ -177,6 +178,16 @@ export default function GeneralSettings(props) {
                   initValue={''}
                   placeholder={t('例如发卡网站的购买链接')}
                   onChange={handleFieldChange('TopUpLink')}
+                  showClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Input
+                  field={'TopupRatio'}
+                  label={t('充值返利比例')}
+                  initValue={''}
+                  placeholder={t('例如 0.1 表示 10% 返利')}
+                  onChange={handleFieldChange('TopupRatio')}
                   showClear
                 />
               </Col>

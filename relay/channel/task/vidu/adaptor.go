@@ -252,16 +252,16 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	state := taskResp.State
 	switch state {
 	case "created", "queueing":
-		taskInfo.Status = model.TaskStatusSubmitted
+		taskInfo.Status = string(model.TaskStatusSubmitted)
 	case "processing":
-		taskInfo.Status = model.TaskStatusInProgress
+		taskInfo.Status = string(model.TaskStatusInProgress)
 	case "success":
-		taskInfo.Status = model.TaskStatusSuccess
+		taskInfo.Status = string(model.TaskStatusSuccess)
 		if len(taskResp.Creations) > 0 {
 			taskInfo.Url = taskResp.Creations[0].URL
 		}
 	case "failed":
-		taskInfo.Status = model.TaskStatusFailure
+		taskInfo.Status = string(model.TaskStatusFailure)
 		if taskResp.ErrCode != "" {
 			taskInfo.Reason = taskResp.ErrCode
 		}

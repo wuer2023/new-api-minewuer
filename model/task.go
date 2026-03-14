@@ -33,12 +33,12 @@ func (t TaskStatus) ToVideoStatus() string {
 
 const (
 	TaskStatusNotStart   TaskStatus = "NOT_START"
-	TaskStatusSubmitted             = "SUBMITTED"
-	TaskStatusQueued                = "QUEUED"
-	TaskStatusInProgress            = "IN_PROGRESS"
-	TaskStatusFailure               = "FAILURE"
-	TaskStatusSuccess               = "SUCCESS"
-	TaskStatusUnknown               = "UNKNOWN"
+	TaskStatusSubmitted  TaskStatus = "SUBMITTED"
+	TaskStatusQueued     TaskStatus = "QUEUED"
+	TaskStatusInProgress TaskStatus = "IN_PROGRESS"
+	TaskStatusFailure    TaskStatus = "FAILURE"
+	TaskStatusSuccess    TaskStatus = "SUCCESS"
+	TaskStatusUnknown    TaskStatus = "UNKNOWN"
 )
 
 type Task struct {
@@ -292,7 +292,7 @@ func TaskGetAllTasks(startIdx int, num int, queryParams SyncTaskQueryParams) []*
 func GetTimedOutUnfinishedTasks(cutoffUnix int64, limit int) []*Task {
 	var tasks []*Task
 	err := DB.Where("progress != ?", "100%").
-		Where("status NOT IN ?", []string{TaskStatusFailure, TaskStatusSuccess}).
+		Where("status NOT IN ?", []TaskStatus{TaskStatusFailure, TaskStatusSuccess}).
 		Where("submit_time < ?", cutoffUnix).
 		Order("submit_time").
 		Limit(limit).

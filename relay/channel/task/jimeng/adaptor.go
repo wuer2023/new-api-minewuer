@@ -436,15 +436,15 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	} else {
 		taskResult.Code = resTask.Code // todo uni code
 		taskResult.Reason = resTask.Message
-		taskResult.Status = model.TaskStatusFailure
+		taskResult.Status = string(model.TaskStatusFailure)
 		taskResult.Progress = "100%"
 	}
 	switch resTask.Data.Status {
 	case "in_queue":
-		taskResult.Status = model.TaskStatusQueued
+		taskResult.Status = string(model.TaskStatusQueued)
 		taskResult.Progress = "10%"
 	case "done":
-		taskResult.Status = model.TaskStatusSuccess
+		taskResult.Status = string(model.TaskStatusSuccess)
 		taskResult.Progress = "100%"
 	}
 	taskResult.Url = resTask.Data.VideoUrl

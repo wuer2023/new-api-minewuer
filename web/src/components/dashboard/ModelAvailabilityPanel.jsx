@@ -37,8 +37,8 @@ const HealthBlock = ({ value, t }) => {
   );
 };
 
-const ChannelRow = ({ channel, t }) => {
-  const history = channel.history ?? [];
+const ModelRow = ({ model, t }) => {
+  const history = model.history ?? [];
   const padded = [...Array(15)].map((_, i) => history[i] ?? null);
 
   const availability = useMemo(() => {
@@ -67,7 +67,7 @@ const ChannelRow = ({ channel, t }) => {
           className='text-sm font-medium truncate'
           style={{ color: 'var(--semi-color-text-0)', maxWidth: '60%' }}
         >
-          {channel.name}
+          {model.name}
         </span>
         <span className='text-xs font-mono' style={{ color: availColor }}>
           {availability !== null ? `${availability}%` : '-'}
@@ -108,7 +108,7 @@ const ModelAvailabilityPanel = ({ CARD_PROPS, ILLUSTRATION_SIZE }) => {
     fetchHealthData();
   }, [fetchHealthData]);
 
-  const channels = healthData?.channels ?? [];
+  const models = healthData?.models ?? [];
 
   return (
     <Card
@@ -118,7 +118,7 @@ const ModelAvailabilityPanel = ({ CARD_PROPS, ILLUSTRATION_SIZE }) => {
         <div className='flex items-center justify-between w-full gap-2'>
           <div className='flex items-center gap-2'>
             <HeartPulse size={16} />
-            {t('渠道可用性')}
+            {t('模型可用性')}
           </div>
           <Button
             icon={<RefreshCw size={14} />}
@@ -134,7 +134,7 @@ const ModelAvailabilityPanel = ({ CARD_PROPS, ILLUSTRATION_SIZE }) => {
       bodyStyle={{ padding: 0 }}
     >
       <Spin spinning={loading}>
-        {channels.length > 0 ? (
+        {models.length > 0 ? (
           <>
             <div className='flex items-center gap-4 px-4 pt-2 pb-1 text-xs' style={{ color: 'var(--semi-color-text-3)' }}>
               <span className='flex items-center gap-1'>
@@ -156,8 +156,8 @@ const ModelAvailabilityPanel = ({ CARD_PROPS, ILLUSTRATION_SIZE }) => {
             </div>
             <ScrollableContainer maxHeight='24rem'>
               <div className='flex flex-col gap-1 px-2 pb-2'>
-                {channels.map((ch, idx) => (
-                  <ChannelRow key={ch.id || idx} channel={ch} t={t} />
+                {models.map((m, idx) => (
+                  <ModelRow key={m.name || idx} model={m} t={t} />
                 ))}
               </div>
             </ScrollableContainer>
@@ -170,7 +170,7 @@ const ModelAvailabilityPanel = ({ CARD_PROPS, ILLUSTRATION_SIZE }) => {
                 <IllustrationConstructionDark style={ILLUSTRATION_SIZE} />
               }
               title={t('暂无健康数据')}
-              description={t('请确认渠道健康检测是否已启用')}
+              description={t('请确认模型健康检测是否已启用')}
             />
           </div>
         )}

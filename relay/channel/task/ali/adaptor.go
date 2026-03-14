@@ -463,15 +463,15 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	// 状态映射
 	switch aliResp.Output.TaskStatus {
 	case "PENDING":
-		taskResult.Status = model.TaskStatusQueued
+		taskResult.Status = string(model.TaskStatusQueued)
 	case "RUNNING":
-		taskResult.Status = model.TaskStatusInProgress
+		taskResult.Status = string(model.TaskStatusInProgress)
 	case "SUCCEEDED":
-		taskResult.Status = model.TaskStatusSuccess
+		taskResult.Status = string(model.TaskStatusSuccess)
 		// 阿里直接返回视频URL，不需要额外的代理端点
 		taskResult.Url = aliResp.Output.VideoURL
 	case "FAILED", "CANCELED", "UNKNOWN":
-		taskResult.Status = model.TaskStatusFailure
+		taskResult.Status = string(model.TaskStatusFailure)
 		if aliResp.Message != "" {
 			taskResult.Reason = aliResp.Message
 		} else if aliResp.Output.Message != "" {
@@ -480,7 +480,7 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskResult.Reason = "task failed"
 		}
 	default:
-		taskResult.Status = model.TaskStatusQueued
+		taskResult.Status = string(model.TaskStatusQueued)
 	}
 
 	return &taskResult, nil

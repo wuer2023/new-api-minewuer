@@ -103,7 +103,7 @@ const HealthFloatingButton = () => {
             ? '0 6px 28px rgba(0,0,0,0.4), 0 0 20px rgba(52,211,153,0.15)'
             : fabStyle.boxShadow,
         }}
-        aria-label='Channel Health'
+        aria-label='Model Health'
       >
         <span style={ringStyle} />
         <span style={glowStyle} />

@@ -60,6 +60,11 @@ export const useNavigation = (t, docsLink, headerNavModules) => {
           ]
         : []),
       {
+        text: t('排行'),
+        itemKey: 'ranking',
+        to: '/ranking',
+      },
+      {
         text: t('关于'),
         itemKey: 'about',
         to: '/about',

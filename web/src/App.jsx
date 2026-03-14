@@ -40,6 +40,7 @@ import Chat from './pages/Chat';
 import Chat2Link from './pages/Chat2Link';
 import Midjourney from './pages/Midjourney';
 import Pricing from './pages/Pricing';
+import Ranking from './pages/Ranking';
 import Task from './pages/Task';
 import ModelPage from './pages/Model';
 import ModelDeploymentPage from './pages/ModelDeployment';
@@ -332,6 +333,14 @@ function App() {
                 <Pricing />
               </Suspense>
             )
+          }
+        />
+        <Route
+          path='/ranking'
+          element={
+            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+              <Ranking />
+            </Suspense>
           }
         />
         <Route

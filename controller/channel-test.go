@@ -899,67 +899,63 @@ func AutomaticallyTestChannels() {
 	})
 }
 
-type channelHealthEntry struct {
-	ID           int    `json:"id"`
+type modelHealthEntry struct {
 	Name         string `json:"name"`
-	Type         int    `json:"type"`
 	History      []int  `json:"history"`
 	Availability *int   `json:"availability"`
 }
 
-type channelHealthData struct {
-	UpdatedAt int64                `json:"updated_at"`
-	Channels  []channelHealthEntry `json:"channels"`
+type modelHealthData struct {
+	UpdatedAt int64              `json:"updated_at"`
+	Models    []modelHealthEntry `json:"models"`
 }
 
 const maxHealthHistory = 15
 
 var (
-	channelHealthMu      sync.Mutex
-	channelHealthHistory = make(map[int][]int)
+	modelHealthMu      sync.Mutex
+	modelHealthHistory = make(map[string][]int)
 )
 
-func loadChannelHealthHistory() {
+func loadModelHealthHistory() {
 	exe, _ := os.Executable()
 	candidates := []string{
-		filepath.Join(filepath.Dir(exe), ".channel_health_history.json"),
-		filepath.Join(".", ".channel_health_history.json"),
+		filepath.Join(filepath.Dir(exe), ".model_health_history.json"),
+		filepath.Join(".", ".model_health_history.json"),
 	}
 	for _, p := range candidates {
 		data, err := os.ReadFile(p)
 		if err != nil {
 			continue
 		}
-		var h map[int][]int
+		var h map[string][]int
 		if json.Unmarshal(data, &h) == nil {
-			channelHealthHistory = h
+			modelHealthHistory = h
 			return
 		}
 	}
 }
 
-func saveChannelHealthHistory() {
-	data, err := json.Marshal(channelHealthHistory)
+func saveModelHealthHistory() {
+	data, err := json.Marshal(modelHealthHistory)
 	if err != nil {
 		return
 	}
 	exe, _ := os.Executable()
-	p := filepath.Join(filepath.Dir(exe), ".channel_health_history.json")
+	p := filepath.Join(filepath.Dir(exe), ".model_health_history.json")
 	_ = os.WriteFile(p, data, 0644)
-	_ = os.WriteFile(filepath.Join(".", ".channel_health_history.json"), data, 0644)
+	_ = os.WriteFile(filepath.Join(".", ".model_health_history.json"), data, 0644)
 }
 
-func writeChannelHealthJSON(channels []*model.Channel) {
-	channelHealthMu.Lock()
-	defer channelHealthMu.Unlock()
+func writeModelHealthJSON(models []string) {
+	modelHealthMu.Lock()
+	defer modelHealthMu.Unlock()
 
-	entries := make([]channelHealthEntry, 0, len(channels))
-	for _, ch := range channels {
-		h := channelHealthHistory[ch.Id]
-		entry := channelHealthEntry{
-			ID:      ch.Id,
-			Name:    ch.Name,
-			Type:    ch.Type,
+	entries := make([]modelHealthEntry, 0, len(models))
+	for _, m := range models {
+		h := modelHealthHistory[m]
+		entry := modelHealthEntry{
+			Name:    m,
 			History: h,
 		}
 		valid := lo.Filter(h, func(v int, _ int) bool { return v == 0 || v == 1 })
@@ -971,20 +967,20 @@ func writeChannelHealthJSON(channels []*model.Channel) {
 		entries = append(entries, entry)
 	}
 
-	output := channelHealthData{
+	output := modelHealthData{
 		UpdatedAt: time.Now().Unix(),
-		Channels:  entries,
+		Models:    entries,
 	}
 
 	data, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
-		common.SysError("failed to marshal channel health data: " + err.Error())
+		common.SysError("failed to marshal model health data: " + err.Error())
 		return
 	}
 
 	exe, _ := os.Executable()
 	candidates := []string{
-		filepath.Join(filepath.Dir(exe), "channel_health.json"),
+		filepath.Join(filepath.Dir(exe), "channel_health.json"), // Keep filename for compatibility or change to model_health.json
 		filepath.Join(".", "channel_health.json"),
 		filepath.Join(".", "web", "dist", "channel_health.json"),
 	}
@@ -993,53 +989,83 @@ func writeChannelHealthJSON(channels []*model.Channel) {
 	}
 }
 
-func runChannelHealthCheck() {
-	channels, err := model.GetAllChannels(0, 0, true, false)
-	if err != nil {
-		common.SysError("channel health check: failed to get channels: " + err.Error())
+func runModelHealthCheck() {
+	setting := operation_setting.GetMonitorSetting()
+	testModels := strings.Split(setting.ChannelHealthCheckModel, ",")
+	testModels = lo.Filter(testModels, func(s string, _ int) bool { return strings.TrimSpace(s) != "" })
+
+	if len(testModels) == 0 {
 		return
 	}
 
-	channelHealthMu.Lock()
-	loadChannelHealthHistory()
-	channelHealthMu.Unlock()
+	modelHealthMu.Lock()
+	loadModelHealthHistory()
+	modelHealthMu.Unlock()
 
-	for _, channel := range channels {
-		if channel.Status != common.ChannelStatusEnabled {
-			continue
+	for _, modelName := range testModels {
+		modelName = strings.TrimSpace(modelName)
+		// Find a channel that supports this model
+		// Instead of using GetRandomSatisfiedChannel which relies on group permissions,
+		// we find ANY enabled channel that supports this model.
+		boundChannelsMap, err := model.GetBoundChannelsByModelsMap([]string{modelName})
+		var channel *model.Channel
+		if err == nil {
+			if channels, ok := boundChannelsMap[modelName]; ok && len(channels) > 0 {
+				// Randomly select one channel
+				// Use math/rand for simplicity, no need for crypto/rand here
+				idx := time.Now().UnixNano() % int64(len(channels))
+				selected := channels[idx]
+				channel, err = model.CacheGetChannel(selected.Id)
+			} else {
+				// No channel supports this model
+				err = fmt.Errorf("no enabled channel supports model %s", modelName)
+			}
 		}
-		tik := time.Now()
-		result := testChannel(channel, "", "", false)
-		tok := time.Now()
-		milliseconds := tok.Sub(tik).Milliseconds()
 
 		var status int
-		if result.localErr != nil || result.newAPIError != nil {
+		if err != nil {
+			// No channel available for this model
 			status = 0
-		} else if milliseconds > 8000 {
-			status = 2
+			common.SysError(fmt.Sprintf("model health check: no channel available for model %s: %v", modelName, err))
+		} else if channel == nil {
+			// Channel is nil but err is nil (should not happen, but defense against panic)
+			status = 0
+			common.SysError(fmt.Sprintf("model health check: channel is nil for model %s", modelName))
 		} else {
-			status = 1
+			tik := time.Now()
+			// Test the channel with this specific model
+			result := testChannel(channel, modelName, "", false)
+			tok := time.Now()
+			milliseconds := tok.Sub(tik).Milliseconds()
+
+			if result.localErr != nil || result.newAPIError != nil {
+				status = 0
+				common.SysError(fmt.Sprintf("model health check: failed for model %s on channel %s: %v", modelName, channel.Name, result.localErr))
+			} else if milliseconds > 8000 {
+				status = 2
+			} else {
+				status = 1
+			}
 		}
 
-		channelHealthMu.Lock()
-		h := channelHealthHistory[channel.Id]
+		modelHealthMu.Lock()
+		h := modelHealthHistory[modelName]
 		h = append(h, status)
 		if len(h) > maxHealthHistory {
 			h = h[len(h)-maxHealthHistory:]
 		}
-		channelHealthHistory[channel.Id] = h
-		channelHealthMu.Unlock()
+		modelHealthHistory[modelName] = h
+		modelHealthMu.Unlock()
 
 		time.Sleep(common.RequestInterval)
 	}
 
-	channelHealthMu.Lock()
-	saveChannelHealthHistory()
-	channelHealthMu.Unlock()
+	modelHealthMu.Lock()
+	saveModelHealthHistory()
+	modelHealthMu.Unlock()
 
-	writeChannelHealthJSON(channels)
-	common.SysLog("channel health check completed")
+	writeModelHealthJSON(testModels)
+	common.SysLog("model health check completed")
 }
 
 var autoChannelHealthOnce sync.Once
@@ -1049,17 +1075,19 @@ func AutomaticallyCheckChannelHealth() {
 		return
 	}
 	autoChannelHealthOnce.Do(func() {
-		loadChannelHealthHistory()
-		intervalStr := os.Getenv("HEALTH_INTERVAL")
-		interval := 900
-		if intervalStr != "" {
-			if v, err := strconv.Atoi(intervalStr); err == nil && v > 0 {
-				interval = v
-			}
-		}
+		loadModelHealthHistory() // Load model history instead
 		for {
-			common.SysLog(fmt.Sprintf("starting channel health check (interval: %ds)", interval))
-			runChannelHealthCheck()
+			setting := operation_setting.GetMonitorSetting()
+			if !setting.ChannelHealthCheckEnabled {
+				time.Sleep(1 * time.Minute)
+				continue
+			}
+			interval := setting.ChannelHealthCheckInterval
+			if interval <= 0 {
+				interval = 900
+			}
+			common.SysLog(fmt.Sprintf("starting model health check (interval: %ds)", interval))
+			runModelHealthCheck() // Run model check instead
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	})

@@ -236,7 +236,7 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 			task.Progress = "100%"
 			RefundTaskQuota(ctx, task, task.FailReason)
 		}
-		if responseItem.Status == model.TaskStatusSuccess {
+		if model.TaskStatus(responseItem.Status) == model.TaskStatusSuccess {
 			task.Progress = "100%"
 		}
 		task.Data = responseItem.Data
@@ -404,7 +404,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 	quota := task.Quota
 
 	task.Status = model.TaskStatus(taskResult.Status)
-	switch taskResult.Status {
+	switch task.Status {
 	case model.TaskStatusSubmitted:
 		task.Progress = taskcommon.ProgressSubmitted
 	case model.TaskStatusQueued:

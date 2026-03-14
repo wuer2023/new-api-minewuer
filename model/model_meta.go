@@ -16,6 +16,7 @@ const (
 )
 
 type BoundChannel struct {
+	Id   int    `json:"id"`
 	Name string `json:"name"`
 	Type int    `json:"type"`
 }
@@ -118,21 +119,21 @@ func GetBoundChannelsByModelsMap(modelNames []string) (map[string][]BoundChannel
 	}
 	type row struct {
 		Model string
+		Id    int
 		Name  string
 		Type  int
 	}
 	var rows []row
 	err := DB.Table("channels").
-		Select("abilities.model as model, channels.name as name, channels.type as type").
+		Select("abilities.model as model, channels.id as id, channels.name as name, channels.type as type").
 		Joins("JOIN abilities ON abilities.channel_id = channels.id").
-		Where("abilities.model IN ? AND abilities.enabled = ?", modelNames, true).
-		Distinct().
+		Where("abilities.model IN ? AND abilities.enabled = ? AND channels.status = ?", modelNames, true, common.ChannelStatusEnabled).
 		Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
 	for _, r := range rows {
-		result[r.Model] = append(result[r.Model], BoundChannel{Name: r.Name, Type: r.Type})
+		result[r.Model] = append(result[r.Model], BoundChannel{Id: r.Id, Name: r.Name, Type: r.Type})
 	}
 	return result, nil
 }

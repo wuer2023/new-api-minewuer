@@ -42,6 +42,7 @@ type homeStatusResponse struct {
 	Enabled        bool                        `json:"enabled"`
 	Summary24h     homeStatusSummary           `json:"summary_24h"`
 	Trend24h       []homeStatusTrendPoint      `json:"trend_24h"`
+	Trend7d        []homeStatusTrendPoint      `json:"trend_7d"`
 	Ranking24h     []homeStatusRankingItem     `json:"ranking_24h"`
 	Ranking7d      []homeStatusRankingItem     `json:"ranking_7d"`
 	UserRanking24h []homeStatusUserRankingItem `json:"user_ranking_24h"`
@@ -94,6 +95,7 @@ func GetHomeStatus(c *gin.Context) {
 
 	startTime24h := now.Add(-24 * time.Hour).Unix()
 	trend24h := make(map[int64]*homeStatusTrendPoint)
+	trend7d := make(map[string]*homeStatusTrendPoint)
 	rankings24h := make(map[string]*homeStatusRankingItem)
 	rankings7d := make(map[string]*homeStatusRankingItem)
 	userRankings24h := make(map[string]*homeStatusUserRankingItem)
@@ -105,6 +107,14 @@ func GetHomeStatus(c *gin.Context) {
 		timestamp = timestamp - (timestamp % 3600)
 		trend24h[timestamp] = &homeStatusTrendPoint{
 			Time: time.Unix(timestamp, 0).Format("01-02 15:00"),
+		}
+	}
+
+	for i := 0; i < 7; i++ {
+		date := now.AddDate(0, 0, i-6)
+		dateStr := date.Format("2006-01-02")
+		trend7d[dateStr] = &homeStatusTrendPoint{
+			Time: dateStr,
 		}
 	}
 
@@ -130,6 +140,12 @@ func GetHomeStatus(c *gin.Context) {
 		}
 		userRanking7d.Count += item.Count
 		userRanking7d.TokenUsed += item.TokenUsed
+
+		dateStr := time.Unix(item.CreatedAt, 0).Format("2006-01-02")
+		if point, ok := trend7d[dateStr]; ok {
+			point.Count += item.Count
+			point.TokenUsed += item.TokenUsed
+		}
 
 		if item.CreatedAt < startTime24h {
 			continue
@@ -183,6 +199,16 @@ func GetHomeStatus(c *gin.Context) {
 	})
 	for _, timestamp := range trendKeys {
 		trend24hList = append(trend24hList, *trend24h[timestamp])
+	}
+
+	trend7dList := make([]homeStatusTrendPoint, 0, len(trend7d))
+	trend7dKeys := make([]string, 0, len(trend7d))
+	for dateStr := range trend7d {
+		trend7dKeys = append(trend7dKeys, dateStr)
+	}
+	sort.Strings(trend7dKeys)
+	for _, dateStr := range trend7dKeys {
+		trend7dList = append(trend7dList, *trend7d[dateStr])
 	}
 
 	ranking24hList := make([]homeStatusRankingItem, 0, len(rankings24h))
@@ -245,6 +271,7 @@ func GetHomeStatus(c *gin.Context) {
 		Enabled:        true,
 		Summary24h:     summary24h,
 		Trend24h:       trend24hList,
+		Trend7d:        trend7dList,
 		Ranking24h:     ranking24hList,
 		Ranking7d:      ranking7dList,
 		UserRanking24h: userRanking24hList,

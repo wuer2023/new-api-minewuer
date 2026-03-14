@@ -333,13 +333,13 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	status := resPayload.Data.TaskStatus
 	switch status {
 	case "submitted":
-		taskInfo.Status = model.TaskStatusSubmitted
+		taskInfo.Status = string(model.TaskStatusSubmitted)
 	case "processing":
-		taskInfo.Status = model.TaskStatusInProgress
+		taskInfo.Status = string(model.TaskStatusInProgress)
 	case "succeed":
-		taskInfo.Status = model.TaskStatusSuccess
+		taskInfo.Status = string(model.TaskStatusSuccess)
 	case "failed":
-		taskInfo.Status = model.TaskStatusFailure
+		taskInfo.Status = string(model.TaskStatusFailure)
 	default:
 		return nil, fmt.Errorf("unknown task status: %s", status)
 	}

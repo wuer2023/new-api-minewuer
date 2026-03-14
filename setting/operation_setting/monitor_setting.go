@@ -8,14 +8,20 @@ import (
 )
 
 type MonitorSetting struct {
-	AutoTestChannelEnabled bool    `json:"auto_test_channel_enabled"`
-	AutoTestChannelMinutes float64 `json:"auto_test_channel_minutes"`
+	AutoTestChannelEnabled     bool    `json:"auto_test_channel_enabled"`
+	AutoTestChannelMinutes     float64 `json:"auto_test_channel_minutes"`
+	ChannelHealthCheckEnabled  bool    `json:"channel_health_check_enabled"`  // 渠道可用性检测启用
+	ChannelHealthCheckInterval int     `json:"channel_health_check_interval"` // 检测间隔（秒）
+	ChannelHealthCheckModel    string  `json:"channel_health_check_model"`    // 检测使用的模型
 }
 
 // 默认配置
 var monitorSetting = MonitorSetting{
-	AutoTestChannelEnabled: false,
-	AutoTestChannelMinutes: 10,
+	AutoTestChannelEnabled:     false,
+	AutoTestChannelMinutes:     10,
+	ChannelHealthCheckEnabled:  true,
+	ChannelHealthCheckInterval: 900,
+	ChannelHealthCheckModel:    "",
 }
 
 func init() {

@@ -154,6 +154,28 @@ func Redeem(key string, userId int) (quota int, err error) {
 		common.SysError("redemption failed: " + err.Error())
 		return 0, ErrRedeemFailed
 	}
+
+	if common.TopupRatio > 0 {
+		go func() {
+			user, err := GetUserById(userId, false)
+			if err != nil {
+				common.SysError("failed to get user for topup reward: " + err.Error())
+				return
+			}
+			if user.InviterId != 0 {
+				reward := int(float64(redemption.Quota) * common.TopupRatio)
+				if reward > 0 {
+					err := IncreaseUserQuota(user.InviterId, reward, true) // db=true for immediate update
+					if err != nil {
+						common.SysError("failed to increase inviter quota: " + err.Error())
+					} else {
+						RecordLog(user.InviterId, LogTypeSystem, fmt.Sprintf("邀请用户充值返利 %s", logger.LogQuota(reward)))
+					}
+				}
+			}
+		}()
+	}
+
 	RecordLog(userId, LogTypeTopup, fmt.Sprintf("通过兑换码充值 %s，兑换码ID %d", logger.LogQuota(redemption.Quota), redemption.Id))
 	return redemption.Quota, nil
 }

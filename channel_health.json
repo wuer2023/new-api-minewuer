@@ -1,10 +1,8 @@
 {
-  "updated_at": 1772983984,
-  "channels": [
+  "updated_at": 1773456743,
+  "models": [
     {
-      "id": 1,
-      "name": "s",
-      "type": 5,
+      "name": "gemini-3-flash-preview-high",
       "history": [
         0,
         0,
@@ -15,14 +13,14 @@
         0,
         0,
         0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
       ],
-      "availability": 0
+      "availability": 40
     }
   ]
 }

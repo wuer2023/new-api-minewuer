@@ -259,25 +259,25 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	// Map Doubao status to internal status
 	switch resTask.Status {
 	case "pending", "queued":
-		taskResult.Status = model.TaskStatusQueued
+		taskResult.Status = string(model.TaskStatusQueued)
 		taskResult.Progress = "10%"
 	case "processing", "running":
-		taskResult.Status = model.TaskStatusInProgress
+		taskResult.Status = string(model.TaskStatusInProgress)
 		taskResult.Progress = "50%"
 	case "succeeded":
-		taskResult.Status = model.TaskStatusSuccess
+		taskResult.Status = string(model.TaskStatusSuccess)
 		taskResult.Progress = "100%"
 		taskResult.Url = resTask.Content.VideoURL
 		// 解析 usage 信息用于按倍率计费
 		taskResult.CompletionTokens = resTask.Usage.CompletionTokens
 		taskResult.TotalTokens = resTask.Usage.TotalTokens
 	case "failed":
-		taskResult.Status = model.TaskStatusFailure
+		taskResult.Status = string(model.TaskStatusFailure)
 		taskResult.Progress = "100%"
 		taskResult.Reason = "task failed"
 	default:
 		// Unknown status, treat as processing
-		taskResult.Status = model.TaskStatusInProgress
+		taskResult.Status = string(model.TaskStatusInProgress)
 		taskResult.Progress = "30%"
 	}
 

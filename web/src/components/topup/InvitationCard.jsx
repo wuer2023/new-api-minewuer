@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   Avatar,
   Typography,
@@ -28,6 +28,7 @@ import {
   Space,
 } from '@douyinfe/semi-ui';
 import { Copy, Users, BarChart2, TrendingUp, Gift, Zap } from 'lucide-react';
+import { StatusContext } from '../../context/Status';
 
 const { Text } = Typography;
 
@@ -39,6 +40,10 @@ const InvitationCard = ({
   affLink,
   handleAffLinkClick,
 }) => {
+  const [statusState] = useContext(StatusContext);
+  const topupRatio = statusState?.status?.topup_ratio || 0;
+  const ratioPercent = Math.round(topupRatio * 100);
+
   return (
     <Card className='!rounded-2xl shadow-sm border-0'>
       {/* 卡片头部 */}
@@ -202,7 +207,7 @@ const InvitationCard = ({
             <div className='flex items-start gap-2'>
               <Badge dot type='success' />
               <Text type='tertiary' className='text-sm'>
-                {t('邀请好友注册，好友充值后您可获得相应奖励')}
+                {t('邀请好友注册，好友充值后您可获得充值金额')} <Text style={{ color: 'var(--semi-color-primary)', fontWeight: 'bold' }}>{ratioPercent}%</Text> {t('的奖励')}
               </Text>
             </div>
 
