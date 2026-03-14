@@ -205,6 +205,68 @@ export default function ModelSettingsVisualEditor(props) {
       ),
     },
     {
+      title: t('输入价格 ($/1M)'),
+      key: 'inputPrice',
+      render: (text, record) => {
+        if (record.price !== '') return <span>-</span>;
+        const price = record.ratio;
+        return (
+          <Input
+            value={price}
+            placeholder={t('输入价格')}
+            onChange={(value) => {
+              const newRatio = parseFloat(value);
+              if (isNaN(newRatio) || newRatio === 0) {
+                updateModel(record.name, 'ratio', value);
+                return;
+              }
+              const oldRatio = parseFloat(record.ratio);
+              const oldCompletionRatio = parseFloat(record.completionRatio || 0);
+              if (isNaN(oldRatio) || oldRatio === 0) {
+                updateModel(record.name, 'ratio', value);
+                return;
+              }
+              const currentOutputPrice = oldRatio * oldCompletionRatio;
+              const newCompletionRatio = currentOutputPrice / newRatio;
+
+              updateModelFields(record.name, {
+                ratio: value,
+                completionRatio: newCompletionRatio.toFixed(6).replace(/\.?0+$/, ''),
+              });
+            }}
+          />
+        );
+      },
+    },
+    {
+      title: t('输出价格 ($/1M)'),
+      key: 'outputPrice',
+      render: (text, record) => {
+        if (record.price !== '') return <span>-</span>;
+        const inputPrice = parseFloat(record.ratio);
+        const completionRatio = parseFloat(record.completionRatio || 0);
+        const outputPrice = isNaN(inputPrice) || isNaN(completionRatio) 
+          ? '' 
+          : (inputPrice * completionRatio).toFixed(4).replace(/\.?0+$/, '');
+        
+        return (
+          <Input
+            value={outputPrice}
+            placeholder={t('输出价格')}
+            onChange={(value) => {
+              if (record.ratio && parseFloat(record.ratio) !== 0) {
+                const newOutputPrice = parseFloat(value);
+                if (!isNaN(newOutputPrice)) {
+                  const newCompletionRatio = newOutputPrice / parseFloat(record.ratio);
+                  updateModel(record.name, 'completionRatio', newCompletionRatio);
+                }
+              }
+            }}
+          />
+        );
+      },
+    },
+    /*{
       title: t('模型倍率'),
       dataIndex: 'ratio',
       key: 'ratio',
@@ -231,7 +293,7 @@ export default function ModelSettingsVisualEditor(props) {
           }
         />
       ),
-    },
+    },*/
     {
       title: t('操作'),
       key: 'action',
@@ -261,6 +323,19 @@ export default function ModelSettingsVisualEditor(props) {
       prev.map((model) => {
         if (model.name !== name) return model;
         const updated = { ...model, [field]: value };
+        updated.hasConflict =
+          updated.price !== '' &&
+          (updated.ratio !== '' || updated.completionRatio !== '');
+        return updated;
+      }),
+    );
+  };
+
+  const updateModelFields = (name, updates) => {
+    setModels((prev) =>
+      prev.map((model) => {
+        if (model.name !== name) return model;
+        const updated = { ...model, ...updates };
         updated.hasConflict =
           updated.price !== '' &&
           (updated.ratio !== '' || updated.completionRatio !== '');
