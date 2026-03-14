@@ -109,7 +109,11 @@ func init() {
 	})
 }
 
-func ListModels(c *gin.Context, modelType int) {
+func ListModels(c *gin.Context) {
+	// ... (rest of ListModels function)
+}
+
+func ListModelsWrapper(c *gin.Context, modelType int) {
 	userOpenAiModels := make([]dto.OpenAIModels, 0)
 
 	acceptUnsetRatioModel := operation_setting.SelfUseModeEnabled
@@ -286,4 +290,16 @@ func RetrieveModel(c *gin.Context, modelType int) {
 			"error": openAIError,
 		})
 	}
+}
+
+// PublicListModels returns all enabled models for public access (filtering)
+func PublicListModels(c *gin.Context) {
+	// This endpoint is public, so we only return model IDs/Names
+	// to allow frontend to filter the leaderboard
+	models := model.GetEnabledModels()
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    models,
+	})
 }
